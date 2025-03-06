@@ -1,0 +1,77 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+
+Parameters:
+  S3BucketName:
+    Type: String
+    Description: Name of the S3 bucket for static website hosting
+  BastionFunctionUrl:
+    Type: String
+    Description: URL of the Contently bastion function
+
+Resources:
+  BrandCompassFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: handler.handler
+      Runtime: python3.9
+      Timeout: 30
+      Environment:
+        Variables:
+          BASTION_FUNCTION_URL: !Ref BastionFunctionUrl
+      Events:
+        ProxyApiAuth:
+          Type: HttpApi
+          Properties:
+            Path: /auth
+            Method: POST
+            ApiId: !Ref BrandCompassApi
+        ProxyApiSql:
+          Type: HttpApi
+          Properties:
+            Path: /sql
+            Method: POST
+            ApiId: !Ref BrandCompassApi
+        ProxyApiRoot:
+          Type: HttpApi
+          Properties:
+            Path: /{proxy+}
+            Method: ANY
+            ApiId: !Ref BrandCompassApi
+      Policies:
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - secretsmanager:GetSecretValue
+              Resource:
+                - !Sub "arn:aws:secretsmanager:${AWS::Region}:253949037832:secret:contently/bastion/credentials-*"
+
+  BrandCompassApi:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      CorsConfiguration:
+        AllowMethods:
+          - '*'
+        AllowHeaders:
+          - authorization
+          - content-type
+          - cookie
+          - x-csrf-token
+        AllowOrigins:
+          - http://localhost:3000
+          - https://contently.cloud
+          - https://contently.com
+          - http://contently-brand-compass-poc.s3-website-us-east-1.amazonaws.com
+        AllowCredentials: true
+        MaxAge: 600
+
+Outputs:
+  BrandCompassApiUrl:
+    Description: URL for the Brand Compass API
+    Value: !Sub "https://${BrandCompassApi}.execute-api.${AWS::Region}.amazonaws.com"
+  
+  BrandCompassApiId:
+    Description: HTTP API Gateway ID
+    Value: !Ref BrandCompassApi

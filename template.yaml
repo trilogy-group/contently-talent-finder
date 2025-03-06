@@ -1,0 +1,76 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+
+Parameters:
+  S3BucketName:
+    Type: String
+    Description: Name of the S3 bucket for static website hosting
+  BastionFunctionName:
+    Type: String
+    Description: Name of the bastion Lambda function
+  BastionFunctionUrl:
+    Type: String
+    Description: URL of the bastion Lambda function
+
+Resources:
+  ContentlyBrandCompassPocFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: proxy-lambda/
+      Handler: handler.lambda_handler
+      Runtime: python3.9
+      Timeout: 120
+      MemorySize: 256
+      Environment:
+        Variables:
+          BASTION_FUNCTION_NAME: !Ref BastionFunctionName
+          BASTION_URL: !Ref BastionFunctionUrl
+      FunctionUrlConfig:
+        AuthType: NONE
+        Cors:
+          AllowOrigins:
+            - "*"
+          AllowMethods:
+            - "POST"
+          AllowHeaders:
+            - "*"
+      Policies:
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action: lambda:InvokeFunction
+              Resource: !Sub "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${BastionFunctionName}"
+            - Effect: Allow
+              Action:
+                - secretsmanager:GetSecretValue
+              Resource:
+                - !Sub "arn:aws:secretsmanager:${AWS::Region}:253949037832:secret:contently/bastion/credentials-*"
+
+  ContentlyBrandCompassPocBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Ref S3BucketName
+      WebsiteConfiguration:
+        IndexDocument: index.html
+        ErrorDocument: index.html
+
+  ContentlyBrandCompassPocBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref ContentlyBrandCompassPocBucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal: '*'
+            Action: s3:GetObject
+            Resource: !Sub "${ContentlyBrandCompassPocBucket.Arn}/*"
+
+Outputs:
+  FunctionUrl:
+    Description: URL for the Brand Compass POC Function
+    Value: !GetAtt ContentlyBrandCompassPocFunction.FunctionUrl
+  
+  BucketUrl:
+    Description: URL for the S3 static website
+    Value: !Sub "http://${S3BucketName}.s3-website-${AWS::Region}.amazonaws.com"

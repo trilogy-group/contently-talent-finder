@@ -1,0 +1,104 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+
+Parameters:
+  VpcId:
+    Type: String
+    Description: VPC ID for Lambda function
+  PrivateSubnet1:
+    Type: String
+    Description: First private subnet for Lambda function
+  PrivateSubnet2:
+    Type: String
+    Description: Second private subnet for Lambda function
+  SecurityGroup:
+    Type: String
+    Description: Security group for Lambda VPC config
+  DbHost:
+    Type: String
+    Description: The database host
+  DbName:
+    Type: String
+    Description: The database name
+  DbUser:
+    Type: String
+    Description: The database user
+  TpmToolsAccountId:
+    Type: String
+    Description: The AWS account ID for TPM tools
+    Default: '253949037832'
+  ContentlyUrl:
+    Type: String
+    Description: The base URL for Contently
+    Default: https://api.contently.com
+  Environment:
+    Type: String
+    Description: The deployment environment (staging, prod, poc)
+    Default: staging
+    AllowedValues:
+      - staging
+      - prod
+      - poc
+  SecretName:
+    Type: String
+    Description: The name of the secret in Secrets Manager
+    Default: contently/database/credentials
+  ReadOnly:
+    Type: String
+    Description: Whether to restrict database access to read-only queries
+    Default: 'true'
+    AllowedValues:
+      - 'true'
+      - 'false'
+
+Resources:
+  ContentlyDatabaseProxyFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "contently-db-proxy-${Environment}"
+      CodeUri: package/
+      Handler: handler.lambda_handler
+      Runtime: python3.9
+      Timeout: 30
+      MemorySize: 256
+      ReservedConcurrentExecutions: 5
+      VpcConfig:
+        SecurityGroupIds:
+          - !Ref SecurityGroup
+        SubnetIds:
+          - !Ref PrivateSubnet1
+          - !Ref PrivateSubnet2
+      FunctionUrlConfig:
+        AuthType: NONE
+      Environment:
+        Variables:
+          DB_HOST: !Ref DbHost
+          DB_NAME: !Ref DbName
+          DB_USER: !Ref DbUser
+          CONTENTLY_URL: !Ref ContentlyUrl
+          ENVIRONMENT: !Ref Environment
+          SECRET_NAME: !Ref SecretName
+          READ_ONLY: !Ref ReadOnly
+      Policies:
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - secretsmanager:GetSecretValue
+              Resource:
+                - !Sub 'arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${SecretName}'
+                - !Sub 'arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${SecretName}-*'
+                - !Sub 'arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:contently/database/credentials'
+                - !Sub 'arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:contently/database/credentials-*'
+        - AWSLambdaBasicExecutionRole
+
+Outputs:
+  BastionFunctionUrl:
+    Description: URL for the Database Proxy Function
+    Value: !GetAtt ContentlyDatabaseProxyFunctionUrl.FunctionUrl
+  BastionFunctionName:
+    Description: Name of the Database Proxy Function
+    Value: !Ref ContentlyDatabaseProxyFunction
+  BastionFunctionArn:
+    Description: ARN of the Database Proxy Function
+    Value: !GetAtt ContentlyDatabaseProxyFunction.Arn

@@ -1,0 +1,73 @@
+Transform: AWS::Serverless-2016-10-31
+
+Parameters:
+  VpcId:
+    Type: String
+    Description: VPC ID for Lambda function
+  PrivateSubnet1:
+    Type: String
+    Description: First private subnet for Lambda function
+  PrivateSubnet2:
+    Type: String
+    Description: Second private subnet for Lambda function
+  SecurityGroup:
+    Type: String
+    Description: Security group for Lambda VPC config
+  DbHost:
+    Type: String
+    Description: The database host
+  DbName:
+    Type: String
+    Description: The database name
+  DbUser:
+    Type: String
+    Description: The database user
+  Environment:
+    Type: String
+    Description: The deployment environment (staging, prod, poc)
+    Default: poc
+  SecretName:
+    Type: String
+    Description: The name of the secret in Secrets Manager
+    Default: contently/database/credentials-poc
+
+Resources:
+  TestConnectionFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: "test-db-connection"
+      CodeUri: src/
+      Handler: test_connection.lambda_handler
+      Runtime: python3.9
+      Timeout: 30
+      MemorySize: 256
+      VpcConfig:
+        SecurityGroupIds:
+          - !Ref SecurityGroup
+        SubnetIds:
+          - !Ref PrivateSubnet1
+          - !Ref PrivateSubnet2
+      FunctionUrlConfig:
+        AuthType: NONE
+      Environment:
+        Variables:
+          DB_HOST: !Ref DbHost
+          DB_NAME: !Ref DbName
+          DB_USER: !Ref DbUser
+          ENVIRONMENT: !Ref Environment
+          SECRET_NAME: !Ref SecretName
+      Policies:
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - secretsmanager:GetSecretValue
+              Resource:
+                - !Sub 'arn:aws:secretsmanager:us-east-1:727712672144:secret:${SecretName}'
+                - !Sub 'arn:aws:secretsmanager:us-east-1:727712672144:secret:${SecretName}-*'
+        - AWSLambdaBasicExecutionRole
+
+Outputs:
+  TestConnectionFunctionUrl:
+    Description: "URL for the test connection function"
+    Value: !GetAtt TestConnectionFunction.FunctionUrl

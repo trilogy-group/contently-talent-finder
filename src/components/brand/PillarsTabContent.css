@@ -1,0 +1,32 @@
+/* Custom scrolling styles for the keywords dropdown */
+.scrollable-container {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(155, 155, 155, 0.5) transparent;
+}
+
+.scrollable-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.scrollable-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollable-container::-webkit-scrollbar-thumb {
+  background-color: rgba(155, 155, 155, 0.5);
+  border-radius: 3px;
+}
+
+/* Ensure the Command component doesn't block scrolling */
+[cmdk-root] {
+  overflow: visible !important;
+}
+
+[cmdk-list] {
+  overflow: visible !important;
+  max-height: none !important;
+}
+
+[cmdk-group] {
+  overflow-y: auto !important;
+}
