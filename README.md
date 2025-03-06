@@ -17,6 +17,8 @@ A modern web application for finding and filtering talent profiles based on vari
 - Tailwind CSS
 - Shadcn UI Components
 - Speech Recognition API
+- AWS S3 (for hosting)
+- AWS Lambda (for backend services)
 
 ## Getting Started
 
@@ -24,12 +26,13 @@ A modern web application for finding and filtering talent profiles based on vari
 
 - Node.js (v16 or higher)
 - npm or yarn
+- AWS CLI (for deployment)
 
 ### Installation
 
 1. Clone the repository
 ```bash
-git clone https://github.com/your-username/talent-finder.git
+git clone https://github.com/trilogy-group/contently-talent-finder.git
 cd talent-finder
 ```
 
@@ -47,7 +50,7 @@ npm run dev
 yarn dev
 ```
 
-4. Open your browser and navigate to `http://localhost:5173`
+4. Open your browser and navigate to `http://localhost:5173` or the port shown in your terminal
 
 ## Usage
 
@@ -67,6 +70,44 @@ yarn dev
 
 - Select a pre-defined content strategy to automatically set filters for specific project types
 - Customize the strategy settings as needed
+
+## Deployment
+
+### Deploying to AWS S3
+
+The application can be deployed to AWS S3 for static web hosting using the included deployment script:
+
+```bash
+# Make sure the script is executable
+chmod +x deploy-react.sh
+
+# Deploy with default settings
+./deploy-react.sh
+
+# Or specify a custom AWS profile and bucket
+./deploy-react.sh --profile your-aws-profile --bucket your-bucket-name
+```
+
+This will:
+1. Create an S3 bucket if it doesn't exist
+2. Configure the bucket for public web hosting
+3. Build the React application
+4. Upload the built files to the S3 bucket
+5. Output the website URL
+
+### Backend Deployment
+
+The application includes Lambda functions that can be deployed using the provided scripts:
+
+```bash
+# Deploy the proxy Lambda function
+cd proxy-lambda
+./deploy.sh
+
+# Deploy the bastion Lambda function
+cd bastion-lambda
+./deploy.sh
+```
 
 ## License
 
