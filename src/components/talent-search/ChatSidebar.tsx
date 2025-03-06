@@ -328,13 +328,6 @@ export const ChatSidebar = ({
           <>
             {/* Chat history */}
             <div className="flex-1 overflow-auto p-4 relative">
-              {/* Coming Soon Watermark */}
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                <div className="text-4xl font-bold text-gray-200 opacity-50 transform -rotate-12">
-                  Coming Soon
-                </div>
-              </div>
-              
               {chatHistory.length === 0 ? (
                 <div className="text-center text-gray-500 p-4">
                   No messages yet
@@ -375,10 +368,10 @@ export const ChatSidebar = ({
                       <Button
                         size="icon"
                         variant="outline"
-                        className="h-10 w-10 flex-shrink-0 opacity-50 cursor-not-allowed"
+                        className="h-10 w-10 flex-shrink-0"
                         aria-label="Start voice recording"
                         ref={micButtonRefLocal}
-                        tabIndex={-1}
+                        onClick={toggleVoiceRecording}
                       >
                         <Mic className="h-5 w-5" />
                       </Button>
@@ -393,7 +386,6 @@ export const ChatSidebar = ({
                   onChange={(e) => setChatQuery(e.target.value)}
                   placeholder="Ask about talent needs..."
                   className="border-gray-200"
-                  disabled={true}
                   onKeyDown={(e) => {
                     if (e.key === "Enter" && !e.shiftKey) {
                       e.preventDefault();
@@ -404,9 +396,7 @@ export const ChatSidebar = ({
                 <Button 
                   onClick={handleSendChat} 
                   className="h-10 w-10 flex-shrink-0"
-                  disabled={true}
                   aria-label="Send message"
-                  title="Chat functionality is temporarily disabled"
                 >
                   <Send className="h-5 w-5" />
                 </Button>

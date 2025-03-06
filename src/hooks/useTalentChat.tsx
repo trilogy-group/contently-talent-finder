@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { industryOptions, specialtyOptions } from "@/data/mock-talent-profiles";
 
 interface UseTalentChatProps {
   setSelectedRoles: (roles: string[]) => void;
@@ -46,6 +47,9 @@ const extractNumber = (text: string): number | null => {
   return null;
 };
 
+const INDUSTRIES = industryOptions.map(option => option.value);
+const SKILLS = specialtyOptions.map(option => option.value);
+
 export const useTalentChat = ({
   setSelectedRoles,
   setSelectedIndustries,
@@ -88,6 +92,14 @@ export const useTalentChat = ({
     setMinProjects(projects);
   };
 
+  const updateSelectedIndustries = (industries: string[]) => {
+    setSelectedIndustries(industries);
+  };
+
+  const updateSelectedSkills = (skills: string[]) => {
+    setSelectedSpecialties(skills);
+  };
+
   // Process a chat message and extract filter information
   const processChat = (messageText: string) => {
     // Add message to chat history
@@ -104,15 +116,79 @@ export const useTalentChat = ({
     // Log the message for debugging
     console.log("Processing chat message:", messageText);
     
-    // DISABLED: Filter processing is temporarily disabled
-    console.log("Filter processing is temporarily disabled");
+    // Process the message to extract filter information
+    // This is a simplified implementation - in a real app, you would use NLP or AI
+    const messageTextLower = messageText.toLowerCase();
+    
+    // Extract industries
+    const industries: string[] = [];
+    INDUSTRIES.forEach(industry => {
+      if (messageTextLower.includes(industry.toLowerCase())) {
+        industries.push(industry);
+      }
+    });
+    
+    // Extract skills/specialties
+    const skills: string[] = [];
+    SKILLS.forEach(skill => {
+      if (messageTextLower.includes(skill.toLowerCase())) {
+        skills.push(skill);
+      }
+    });
+    
+    // Look for experience indicators
+    let newMinScore = minScore;
+    if (messageTextLower.includes("expert") || messageTextLower.includes("senior")) {
+      newMinScore = 8;
+    } else if (messageTextLower.includes("experienced") || messageTextLower.includes("mid-level")) {
+      newMinScore = 6;
+    } else if (messageTextLower.includes("junior") || messageTextLower.includes("beginner")) {
+      newMinScore = 4;
+    }
+    
+    // Update filters if we found any matches
+    const filtersUpdated = industries.length > 0 || skills.length > 0 || newMinScore !== minScore;
+    
+    if (industries.length > 0) {
+      updateSelectedIndustries(industries);
+    }
+    
+    if (skills.length > 0) {
+      updateSelectedSkills(skills);
+    }
+    
+    if (newMinScore !== minScore) {
+      updateMinScore(newMinScore);
+    }
     
     // Simulate a response after a short delay
     setTimeout(() => {
+      let responseContent = "";
+      
+      if (filtersUpdated) {
+        responseContent = `I've updated the following filters based on your request:\n`;
+        
+        if (industries.length > 0) {
+          responseContent += `\n• Industries: ${industries.join(", ")}`;
+        }
+        
+        if (skills.length > 0) {
+          responseContent += `\n• Skills: ${skills.join(", ")}`;
+        }
+        
+        if (newMinScore !== minScore) {
+          responseContent += `\n• Minimum score: ${newMinScore}`;
+        }
+        
+        responseContent += `\n\nIs there anything else you'd like to specify?`;
+      } else {
+        responseContent = "I couldn't identify specific filters from your message. Could you be more specific about the industries, skills, or experience level you're looking for?";
+      }
+      
       const responseMessage = {
         id: (Date.now() + 1).toString(),
         role: "assistant",
-        content: "I've received your message. Filter processing is currently disabled.",
+        content: responseContent,
         timestamp: new Date().toISOString()
       };
       
