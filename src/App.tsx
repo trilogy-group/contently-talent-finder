@@ -1,12 +1,8 @@
 import { Routes, Route } from "react-router-dom";
-import TalentSearch from "@/pages/TalentSearch";
-import TalentSearchV5 from "@/pages/TalentSearchV5";
-import BrandCompass from "@/pages/BrandCompass";
+import SimplifiedTalentSearch from "@/pages/SimplifiedTalentSearch";
 import NotFound from "@/pages/NotFound";
 import Login from "@/pages/Login";
-import Index from "@/pages/Index";
 import Content from "@/pages/Content";
-import { StrategyProvider } from "@/context/StrategyContext";
 
 // Sample documents data
 const sampleDocuments = [
@@ -162,17 +158,12 @@ function App() {
   };
 
   return (
-    <StrategyProvider>
-      <Routes>
-        <Route path="/" element={<Login />} />
-        <Route path="/index" element={<Index />} />
-        <Route path="/content" element={<Content />} />
-        <Route path="/talent-search" element={<TalentSearch />} />
-        <Route path="/talent-search-v5" element={<TalentSearchV5 />} />
-        <Route path="/brand-compass" element={<BrandCompass />} />
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-    </StrategyProvider>
+    <Routes>
+      <Route path="/" element={<SimplifiedTalentSearch />} />
+      <Route path="/login" element={<Login />} />
+      <Route path="/content" element={<Content documents={sampleDocuments} onAddDocument={handleAddDocument} onRemoveDocument={handleRemoveDocument} />} />
+      <Route path="*" element={<NotFound />} />
+    </Routes>
   );
 }
 

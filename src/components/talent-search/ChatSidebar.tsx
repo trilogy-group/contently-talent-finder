@@ -23,8 +23,8 @@ interface ChatSidebarProps {
   setResultCount?: (count: number) => void;
   minExperience: number | null;
   setMinExperience: (experience: number | null) => void;
-  sortOrder?: string;
-  setSortOrder?: (order: string) => void;
+  sortOrder?: "relevance" | "experience" | "name";
+  setSortOrder?: (order: "relevance" | "experience" | "name") => void;
   showStarredOnly?: boolean;
   setShowStarredOnly?: (show: boolean) => void;
   minScore?: number;

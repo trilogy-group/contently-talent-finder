@@ -44,8 +44,8 @@ interface FilterSidebarProps {
   resetFilters: () => void;
   resultCount?: number;
   setResultCount?: (count: number) => void;
-  sortOrder: string;
-  setSortOrder: (sortOrder: string) => void;
+  sortOrder: "relevance" | "experience" | "name";
+  setSortOrder: (sortOrder: "relevance" | "experience" | "name") => void;
 }
 
 export const FilterSidebar = ({

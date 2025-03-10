@@ -45,7 +45,7 @@ const TalentSearch = () => {
   const [minProjects, setMinProjects] = useState<number | null>(null);
   const [starredProfiles, setStarredProfiles] = useState<number[]>([]);
   const [showStarredOnly, setShowStarredOnly] = useState(false);
-  const [sortOrder, setSortOrder] = useState<"relevance" | "score" | "experience" | "projects">("relevance");
+  const [sortOrder, setSortOrder] = useState<"relevance" | "experience" | "name">("relevance");
   
   // UI state
   const [searchMode, setSearchMode] = useState<"filters" | "chat">("filters");
@@ -215,12 +215,10 @@ const TalentSearch = () => {
   // Sort the filtered profiles based on the selected sort order
   const sortedProfiles = [...filteredProfiles].sort((a, b) => {
     switch (sortOrder) {
-      case "score":
-        return (b.score || 0) - (a.score || 0);
       case "experience":
         return b.yearsOfExperience - a.yearsOfExperience;
-      case "projects":
-        return (b.projects?.length || 0) - (a.projects?.length || 0);
+      case "name":
+        return a.name.localeCompare(b.name);
       case "relevance":
       default:
         // Relevance is the default order from filterTalentProfiles

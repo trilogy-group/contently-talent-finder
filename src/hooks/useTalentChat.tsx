@@ -8,7 +8,7 @@ interface UseTalentChatProps {
   setMinExperience: (experience: number | null) => void;
   setMinScore: (score: number | null) => void;
   setMinProjects: (projects: number | null) => void;
-  setSortOrder: (order: string) => void;
+  setSortOrder: (order: "relevance" | "experience" | "name") => void;
   setResultCount: (count: number) => void;
   
   // Current filter states for feedback
@@ -72,12 +72,12 @@ export const useTalentChat = ({
   const [appliedFilters, setAppliedFilters] = useState<string[]>([]);
   
   // Add state for the filter values
-  const [sortOrder, setSortOrderState] = useState<string>("relevance");
+  const [sortOrder, setSortOrderState] = useState<"relevance" | "experience" | "name">("relevance");
   const [minScore, setMinScoreState] = useState<number | null>(null);
   const [minProjects, setMinProjectsState] = useState<number | null>(null);
   
   // Wrapper functions to update both local state and parent state
-  const updateSortOrder = (order: string) => {
+  const updateSortOrder = (order: "relevance" | "experience" | "name") => {
     setSortOrderState(order);
     setSortOrder(order);
   };
@@ -105,7 +105,7 @@ export const useTalentChat = ({
     // Add message to chat history
     const newMessage = {
       id: Date.now().toString(),
-      role: "user",
+      role: "user" as const,
       content: messageText,
       timestamp: new Date().toISOString()
     };
@@ -187,7 +187,7 @@ export const useTalentChat = ({
       
       const responseMessage = {
         id: (Date.now() + 1).toString(),
-        role: "assistant",
+        role: "assistant" as const,
         content: responseContent,
         timestamp: new Date().toISOString()
       };
