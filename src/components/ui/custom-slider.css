@@ -1,0 +1,68 @@
+/* Custom slider styling to match the brand-primary color (#00A6C2) */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+  width: 100%;
+}
+
+/* Track styles */
+input[type="range"]::-webkit-slider-runnable-track {
+  background: #e0e0e0;
+  height: 4px;
+  border-radius: 2px;
+}
+
+input[type="range"]::-moz-range-track {
+  background: #e0e0e0;
+  height: 4px;
+  border-radius: 2px;
+}
+
+/* Thumb styles */
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  margin-top: -6px; /* Centers thumb on the track */
+  background-color: #00A6C2; /* brand-primary color */
+  height: 16px;
+  width: 16px;
+  border-radius: 50%;
+  border: none;
+}
+
+input[type="range"]::-moz-range-thumb {
+  border: none;
+  background-color: #00A6C2; /* brand-primary color */
+  height: 16px;
+  width: 16px;
+  border-radius: 50%;
+}
+
+/* Focus styles */
+input[type="range"]:focus {
+  outline: none;
+}
+
+input[type="range"]:focus::-webkit-slider-thumb {
+  box-shadow: 0 0 0 3px rgba(0, 166, 194, 0.3); /* brand-primary with opacity */
+}
+
+input[type="range"]:focus::-moz-range-thumb {
+  box-shadow: 0 0 0 3px rgba(0, 166, 194, 0.3); /* brand-primary with opacity */
+}
+
+/* Progress fill */
+input[type="range"].slider-progress {
+  --progress-value: 0%;
+  --progress-color: #00A6C2; /* brand-primary color */
+}
+
+input[type="range"].slider-progress::-webkit-slider-runnable-track {
+  background: linear-gradient(to right, var(--progress-color) var(--progress-value), #e0e0e0 var(--progress-value));
+}
+
+input[type="range"].slider-progress::-moz-range-track {
+  background: linear-gradient(to right, var(--progress-color) var(--progress-value), #e0e0e0 var(--progress-value));
+}
