@@ -1,5 +1,4 @@
 import { Star, Briefcase, Trophy, Mail, Info, Maximize, ChevronRight, Send, Award, ChevronDown, ChevronUp, FileText } from "lucide-react";
-import { TalentProfile } from "@/types/talent-search";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -8,13 +7,32 @@ import { Textarea } from "@/components/ui/textarea";
 import { useState } from "react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
-interface TalentCardProps {
-  profile: TalentProfile;
-  isStarred: boolean;
-  onToggleStar: (profileId: number) => void;
+interface TalentData {
+  id: number;
+  name: string;
+  headline: string;
+  bio: string;
+  avatar_url: string;
+  location: string;
+  languages: string[];
+  skills: string[];
+  topics: string[];
+  clips: {
+    id: number;
+    title: string;
+    url: string;
+    publication: string;
+  }[];
+  portfolio: string;
+  status: string;
+  programmatic_position: number;
 }
 
-export const TalentCardV5 = ({ profile, isStarred, onToggleStar }: TalentCardProps) => {
+interface TalentCardProps {
+  talent: TalentData;
+}
+
+export const TalentCardV5 = ({ talent }: TalentCardProps) => {
   const [showContactDialog, setShowContactDialog] = useState(false);
   const [showExperienceDialog, setShowExperienceDialog] = useState(false);
   const [showProjectsDialog, setShowProjectsDialog] = useState(false);
@@ -25,13 +43,12 @@ export const TalentCardV5 = ({ profile, isStarred, onToggleStar }: TalentCardPro
   const [workSamplesExpanded, setWorkSamplesExpanded] = useState(false);
 
   // Color assignments for different categories
-  const industryColors = "bg-[#FEF7CD] text-gray-700 hover:bg-[#FDE1D3]";
-  const specialtyColors = "bg-[#E5DEFF] text-gray-700 hover:bg-[#D3E4FD]";
+  const topicColors = "bg-[#E5DEFF] text-gray-700 hover:bg-[#D3E4FD]";
   const skillColors = "bg-[#F2FCE2] text-gray-700 hover:bg-[#FFDEE2]";
 
   const handleSendMessage = () => {
     // Here you would implement the actual sending logic
-    console.log(`Sending message to ${profile.name}: ${messageText}`);
+    console.log(`Sending message to ${talent.name}: ${messageText}`);
     setMessageText("");
     setShowContactDialog(false);
   };
@@ -55,190 +72,66 @@ export const TalentCardV5 = ({ profile, isStarred, onToggleStar }: TalentCardPro
     <TooltipProvider>
       <Card className="overflow-hidden transition-all hover:shadow-md">
         <CardContent className="p-6">
-          {/* Header Section with Name, Title and Stats */}
+          {/* Header Section with Name, Title and Avatar */}
           <div className="flex justify-between items-start mb-4">
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 className="text-xl font-semibold">{profile.name}</h3>
-                <div className="flex items-center gap-1">
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <button 
-                        onClick={() => onToggleStar(profile.id)}
-                        className="text-gray-400 hover:text-yellow-400 transition-colors"
-                        aria-label={isStarred ? "Remove from starred" : "Add to starred"}
-                      >
-                        <Star className={`h-5 w-5 ${isStarred ? "text-yellow-400 fill-yellow-400" : ""}`} />
-                      </button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>{isStarred ? "Remove from favorites" : "Add to favorites"}</p>
-                    </TooltipContent>
-                  </Tooltip>
-                  
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <button
-                        onClick={() => setShowContactDialog(true)}
-                        className="text-gray-400 hover:text-brand-primary transition-colors"
-                        aria-label="Contact talent"
-                      >
-                        <Mail className="h-5 w-5" />
-                      </button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Contact {profile.name}</p>
-                    </TooltipContent>
-                  </Tooltip>
-                  
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <button
-                        onClick={() => setShowBioDialog(true)}
-                        className="text-gray-400 hover:text-brand-primary transition-colors"
-                        aria-label="View full bio"
-                      >
-                        <FileText className="h-5 w-5" />
-                      </button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>View full bio</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </div>
+            <div className="flex items-start gap-4">
+              <img
+                src={talent.avatar_url}
+                alt={talent.name}
+                className="w-16 h-16 rounded-full object-cover"
+              />
+              <div>
+                <h3 className="font-semibold text-lg">{talent.name}</h3>
+                <p className="text-gray-600">{talent.headline}</p>
+                {talent.location && (
+                  <p className="text-sm text-gray-500">{talent.location}</p>
+                )}
               </div>
-              <p className="text-brand-primary font-medium">{profile.role}</p>
-            </div>
-            
-            <div className="flex gap-4 text-right">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <button className="flex flex-col items-center group">
-                    <div className="flex items-center gap-1">
-                      <Award className="h-5 w-5 text-green-500" />
-                      <span className="text-lg font-bold">{profile.rating}</span>
-                    </div>
-                    <span className="text-sm text-gray-500 group-hover:text-brand-primary">Score</span>
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Talent score based on client ratings</p>
-                </TooltipContent>
-              </Tooltip>
-              
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <button 
-                    className="flex flex-col items-center group"
-                    onClick={() => setShowExperienceDialog(true)}
-                  >
-                    <div className="flex items-center gap-1">
-                      <Trophy className="h-5 w-5 text-orange-400" />
-                      <span className="text-lg font-bold">{profile.experience}+</span>
-                    </div>
-                    <span className="text-sm text-gray-500 group-hover:text-brand-primary">Experience</span>
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Years of professional experience</p>
-                </TooltipContent>
-              </Tooltip>
-              
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <button 
-                    className="flex flex-col items-center group"
-                    onClick={() => setShowProjectsDialog(true)}
-                  >
-                    <div className="flex items-center gap-1">
-                      <Briefcase className="h-5 w-5 text-blue-400" />
-                      <span className="text-lg font-bold">{profile.completedProjects}</span>
-                    </div>
-                    <span className="text-sm text-gray-500 group-hover:text-brand-primary">Projects</span>
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Completed projects</p>
-                </TooltipContent>
-              </Tooltip>
             </div>
           </div>
-          
-          {/* Bio */}
+
+          {/* Bio Section */}
           <div className="mb-4">
-            <p className="text-gray-700">{profile.bio}</p>
+            <p className="text-gray-600 line-clamp-2">{talent.bio}</p>
           </div>
-          
-          {/* Content Highlights */}
-          <div className="mb-4 bg-slate-50 p-3 rounded-lg border border-slate-100 relative">
-            <div className="flex justify-between items-center mb-2">
-              <h4 className="text-sm font-semibold text-gray-600">RELEVANT WORK SAMPLES</h4>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <button 
-                    onClick={() => setWorkSamplesExpanded(!workSamplesExpanded)}
-                    className="text-gray-400 hover:text-brand-primary transition-colors"
-                    aria-label={workSamplesExpanded ? "Collapse work samples" : "Expand work samples"}
+
+          {/* Work Samples Section */}
+          <div className="mb-4">
+            <h4 className="text-sm font-semibold text-gray-700 mb-2">Recent Work</h4>
+            <div className="space-y-2">
+              {talent.clips.slice(0, workSamplesExpanded ? undefined : 3).map((clip) => (
+                <div key={clip.id} className="text-sm">
+                  <a
+                    href={clip.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 hover:underline"
                   >
-                    {workSamplesExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>{workSamplesExpanded ? "Collapse work samples" : "Expand work samples"}</p>
-                </TooltipContent>
-              </Tooltip>
+                    {clip.title}
+                  </a>
+                  <span className="text-gray-500"> - {clip.publication}</span>
+                </div>
+              ))}
             </div>
-            {profile.sampleWritings && profile.sampleWritings.length > 0 ? (
-              <div className={`space-y-2 ${workSamplesExpanded ? 'max-h-60 overflow-y-auto custom-scrollbar pr-2' : 'max-h-0 overflow-hidden'} transition-all duration-300`}>
-                {profile.sampleWritings.map((sample, index) => (
-                  <div key={index} className="bg-white p-2 rounded border border-slate-200 relative">
-                    <div className="flex justify-between items-start">
-                      <p className="font-medium text-brand-primary pr-6">{sample.title}</p>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <button
-                            onClick={() => {
-                              setSelectedSample(sample);
-                              setShowSamplesDialog(true);
-                            }}
-                            className="absolute top-2 right-2 text-gray-400 hover:text-brand-primary transition-colors"
-                            aria-label="View full sample"
-                          >
-                            <Maximize className="h-4 w-4" />
-                          </button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>View full sample</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </div>
-                    <p className="text-sm text-gray-600 line-clamp-2">{sample.excerpt}</p>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-sm text-gray-500 italic">No work samples available</p>
+            {talent.clips.length > 3 && (
+              <Button
+                variant="link"
+                className="text-sm p-0 h-auto mt-1"
+                onClick={() => setWorkSamplesExpanded(!workSamplesExpanded)}
+              >
+                {workSamplesExpanded ? "Show less" : "Show more"}
+              </Button>
             )}
           </div>
-          
-          {/* Tags - Table layout with 3 columns */}
-          <div className="grid grid-cols-3 gap-4">
+
+          {/* Skills and Topics Section */}
+          <div className="grid grid-cols-2 gap-4">
             <div>
-              <h4 className="text-xs font-semibold text-gray-500 mb-1">INDUSTRIES</h4>
+              <h4 className="text-xs font-semibold text-gray-500 mb-1">TOPICS</h4>
               <div className="flex flex-wrap gap-1 overflow-y-auto max-h-24">
-                {profile.industries.map((industry) => (
-                  <Badge key={industry} variant="secondary" className={industryColors}>
-                    {industry}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-            <div>
-              <h4 className="text-xs font-semibold text-gray-500 mb-1">SPECIALTIES</h4>
-              <div className="flex flex-wrap gap-1 overflow-y-auto max-h-24">
-                {profile.specialties.map((specialty) => (
-                  <Badge key={specialty} variant="secondary" className={specialtyColors}>
-                    {specialty}
+                {talent.topics.map((topic) => (
+                  <Badge key={topic} variant="secondary" className={topicColors}>
+                    {topic}
                   </Badge>
                 ))}
               </div>
@@ -246,7 +139,7 @@ export const TalentCardV5 = ({ profile, isStarred, onToggleStar }: TalentCardPro
             <div>
               <h4 className="text-xs font-semibold text-gray-500 mb-1">SKILLS</h4>
               <div className="flex flex-wrap gap-1 overflow-y-auto max-h-24">
-                {profile.skills.map((skill) => (
+                {talent.skills.map((skill) => (
                   <Badge key={skill} variant="secondary" className={skillColors}>
                     {skill}
                   </Badge>
@@ -254,6 +147,20 @@ export const TalentCardV5 = ({ profile, isStarred, onToggleStar }: TalentCardPro
               </div>
             </div>
           </div>
+
+          {/* Portfolio Link */}
+          {talent.portfolio && (
+            <div className="mt-4">
+              <a
+                href={talent.portfolio}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm text-blue-600 hover:underline"
+              >
+                View Full Portfolio →
+              </a>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -261,14 +168,14 @@ export const TalentCardV5 = ({ profile, isStarred, onToggleStar }: TalentCardPro
       <Dialog open={showContactDialog} onOpenChange={setShowContactDialog}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Message {profile.name}</DialogTitle>
+            <DialogTitle>Message {talent.name}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <p className="text-sm text-gray-500">
-              Your message will be sent directly to {profile.name}. They typically respond within 24-48 hours.
+              Your message will be sent directly to {talent.name}. They typically respond within 24-48 hours.
             </p>
             <Textarea 
-              placeholder={`Hello ${profile.name}, I'm interested in discussing a potential project...`}
+              placeholder={`Hello ${talent.name}, I'm interested in discussing a potential project...`}
               value={messageText}
               onChange={(e) => setMessageText(e.target.value)}
               className="min-h-32"
@@ -384,12 +291,12 @@ export const TalentCardV5 = ({ profile, isStarred, onToggleStar }: TalentCardPro
       <Dialog open={showBioDialog} onOpenChange={setShowBioDialog}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>About {profile.name}</DialogTitle>
+            <DialogTitle>About {talent.name}</DialogTitle>
           </DialogHeader>
           <div className="py-4">
             <div className="bg-white p-4 rounded-lg max-h-[60vh] overflow-y-auto pr-4 custom-scrollbar">
               <p className="text-gray-600 whitespace-pre-line">
-                {profile.expandedBio || profile.bio}
+                {talent.expandedBio || talent.bio}
               </p>
             </div>
           </div>

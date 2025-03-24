@@ -7,7 +7,7 @@ import { X, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface FilterOption {
-  readonly value: string;
+  readonly value: string | number;
   readonly label: string;
 }
 

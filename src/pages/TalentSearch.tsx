@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { TalentData } from "@/types/talent-search";
 
 // Create skill options from the talent profiles
 const skillOptions = Array.from(
@@ -52,6 +53,10 @@ const TalentSearch = () => {
   const [showFilters, setShowFilters] = useState(true);
   const [resultCount, setResultCount] = useState(10);
   const [showSpeechAlert, setShowSpeechAlert] = useState(false);
+
+  // Add state for talents and search status
+  const [talents, setTalents] = useState<TalentData[]>([]);
+  const [hasSearched, setHasSearched] = useState(false);
 
   // Wrapper functions for state updates
   const updateSelectedIndustries = (industries: string[]) => {
@@ -307,6 +312,8 @@ const TalentSearch = () => {
                   setResultCount={setResultCount}
                   sortOrder={sortOrder}
                   setSortOrder={setSortOrder}
+                  setTalents={setTalents}
+                  setHasSearched={setHasSearched}
                 />
               ) : (
                 <ChatSidebar
@@ -340,27 +347,31 @@ const TalentSearch = () => {
           {/* Results area */}
           <div className={`${showFilters ? 'md:col-span-3' : 'md:col-span-4'}`}>
             <div className="space-y-4 overflow-auto h-[calc(100vh-200px)] pr-2">
-              {filteredProfiles.length === 0 ? (
+              {!hasSearched ? (
+                <div className="bg-white p-8 rounded-lg shadow-sm text-center">
+                  <p className="text-gray-600">Use the filters on the left and click SEARCH to find talents.</p>
+                </div>
+              ) : talents.length === 0 ? (
                 <div className="bg-white p-8 rounded-lg shadow-sm text-center">
                   <p className="text-gray-600">No talent matches your criteria. Try adjusting your filters.</p>
                 </div>
               ) : (
-                displayedProfiles.map((profile) => (
-                  <TalentCardV5
-                    key={profile.id}
-                    profile={profile}
-                    isStarred={starredProfiles.includes(profile.id)}
-                    onToggleStar={toggleStarred}
-                  />
-                ))
-              )}
-              {filteredProfiles.length > resultCount && (
-                <div className="bg-white p-4 rounded-lg shadow-sm text-center">
-                  <p className="text-gray-600">
-                    Showing {resultCount} of {filteredProfiles.length} results. 
-                    {resultCount < 100 && " Adjust the slider to see more."}
-                  </p>
-                </div>
+                <>
+                  {talents.slice(0, resultCount).map((talent) => (
+                    <TalentCardV5
+                      key={talent.id}
+                      talent={talent}
+                    />
+                  ))}
+                  {talents.length > resultCount && (
+                    <div className="bg-white p-4 rounded-lg shadow-sm text-center">
+                      <p className="text-gray-600">
+                        Showing {resultCount} of {talents.length} results. 
+                        {resultCount < 100 && " Adjust the slider to see more."}
+                      </p>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </div>

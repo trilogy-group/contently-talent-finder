@@ -11,6 +11,7 @@ import { useTalentChat } from "@/hooks/useTalentChat";
 import { filterTalentProfiles } from "@/utils/talentFilterUtils";
 import { useStrategy } from "@/context/StrategyContext";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { TalentData } from "@/types/talent-search";
 
 const TalentSearchV5 = () => {
   // Filter state
@@ -32,6 +33,10 @@ const TalentSearchV5 = () => {
 
   // Get strategy context
   const { selectedStrategy, setSelectedStrategy } = useStrategy();
+
+  // Add state for talents and search status
+  const [talents, setTalents] = useState<TalentData[]>([]);
+  const [hasSearched, setHasSearched] = useState(false);
 
   // Update filters based on selected strategy
   useEffect(() => {
@@ -250,6 +255,12 @@ const TalentSearchV5 = () => {
   // Limit the results to the user-selected count
   const limitedProfiles = filteredProfiles.slice(0, resultCount);
 
+  // Pass this to FilterSidebar
+  const handleSearchResults = (searchResults: TalentData[]) => {
+    setTalents(searchResults);
+    setHasSearched(true);
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
       <TitleBar 
@@ -317,6 +328,8 @@ const TalentSearchV5 = () => {
                   resetFilters={resetAll}
                   resultCount={resultCount}
                   setResultCount={setResultCount}
+                  setTalents={handleSearchResults}
+                  setHasSearched={setHasSearched}
                 />
               ) : (
                 <ChatSidebar
@@ -352,27 +365,31 @@ const TalentSearchV5 = () => {
           {/* Results area */}
           <div className={`${showFilters ? 'md:col-span-3' : 'md:col-span-4'}`}>
             <div className="space-y-4 overflow-auto h-[calc(100vh-200px)] pr-2">
-              {filteredProfiles.length === 0 ? (
+              {!hasSearched ? (
+                <div className="bg-white p-8 rounded-lg shadow-sm text-center">
+                  <p className="text-gray-600">Use the filters on the left and click SEARCH to find talents.</p>
+                </div>
+              ) : talents.length === 0 ? (
                 <div className="bg-white p-8 rounded-lg shadow-sm text-center">
                   <p className="text-gray-600">No talent matches your criteria. Try adjusting your filters.</p>
                 </div>
               ) : (
-                limitedProfiles.map((profile) => (
-                  <TalentCardV5
-                    key={profile.id}
-                    profile={profile}
-                    isStarred={starredProfiles.includes(profile.id)}
-                    onToggleStar={toggleStarred}
-                  />
-                ))
-              )}
-              {filteredProfiles.length > resultCount && (
-                <div className="bg-white p-4 rounded-lg shadow-sm text-center">
-                  <p className="text-gray-600">
-                    Showing {resultCount} of {filteredProfiles.length} results. 
-                    {resultCount < 100 && " Adjust the slider to see more."}
-                  </p>
-                </div>
+                <>
+                  {talents.slice(0, resultCount).map((talent) => (
+                    <TalentCardV5
+                      key={talent.id}
+                      talent={talent}
+                    />
+                  ))}
+                  {talents.length > resultCount && (
+                    <div className="bg-white p-4 rounded-lg shadow-sm text-center">
+                      <p className="text-gray-600">
+                        Showing {resultCount} of {talents.length} results. 
+                        {resultCount < 100 && " Adjust the slider to see more."}
+                      </p>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </div>
