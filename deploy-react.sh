@@ -8,17 +8,14 @@ while [[ "$#" -gt 0 ]]; do
     case $1 in
         --profile)
             AWS_PROFILE="$2"
-            shift
-            shift
+            shift 2
             ;;
         --bucket)
             S3_BUCKET="$2"
-            shift
-            shift
+            shift 2
             ;;
         *) echo "Unknown parameter: $1"; exit 1 ;;
     esac
-    shift
 done
 
 # Use default profile if none specified

@@ -95,7 +95,7 @@ This will:
 4. Upload the built files to the S3 bucket
 5. Output the website URL
 
-### Backend Deployment
+### Backend (Proxy and Bastion) Deployment
 
 The application includes Lambda functions that can be deployed using the provided scripts:
 
@@ -107,6 +107,17 @@ cd proxy-lambda
 # Deploy the bastion Lambda function
 cd bastion-lambda
 ./deploy.sh
+```
+
+### Backend (Talent Search) Deployment
+
+The talent search backend is deployed using AWS CDK.
+
+```bash
+cd backend
+npm install
+npm run build
+cdk deploy
 ```
 
 ## License
