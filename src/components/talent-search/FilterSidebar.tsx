@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { SlidersHorizontal, MessageSquare, RotateCw, Settings, Star, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,7 +17,7 @@ import {
   RadioGroup,
   RadioGroupItem
 } from "@/components/ui/radio-group";
-import { FilterOption } from "@/types/talent-search";
+import { FilterOption, TalentData } from "@/types/talent-search";
 
 interface FilterSidebarProps {
   searchMode: "filters" | "chat";
@@ -29,9 +29,6 @@ interface FilterSidebarProps {
   minExperience: number | null;
   minScore: number | null;
   minProjects: number | null;
-  industryOptions: FilterOption[];
-  specialtyOptions: FilterOption[];
-  skillOptions: FilterOption[];
   setSearchMode: (mode: "filters" | "chat") => void;
   setSearchTerm: (term: string) => void;
   setShowStarredOnly: (show: boolean) => void;
@@ -46,6 +43,23 @@ interface FilterSidebarProps {
   setResultCount?: (count: number) => void;
   sortOrder: string;
   setSortOrder: (sortOrder: string) => void;
+  setTalents: (talents: TalentData[]) => void;
+  setHasSearched: (hasSearched: boolean) => void;
+}
+
+interface SearchResponse {
+  talent_request: {
+    id: number;
+    name: string;
+    // ... other fields
+  };
+  relevant_skills_and_topics: {
+    [key: string]: {
+      relevant_skills: string;
+      relevant_topics: string;
+    };
+  };
+  contributors: TalentData[];
 }
 
 export const FilterSidebar = ({
@@ -58,9 +72,6 @@ export const FilterSidebar = ({
   minExperience,
   minScore,
   minProjects,
-  industryOptions,
-  specialtyOptions,
-  skillOptions,
   setSearchMode,
   setSearchTerm,
   setShowStarredOnly,
@@ -74,19 +85,46 @@ export const FilterSidebar = ({
   resultCount = 10,
   setResultCount = () => {},
   sortOrder,
-  setSortOrder
+  setSortOrder,
+  setTalents,
+  setHasSearched,
 }: FilterSidebarProps) => {
-  const [experienceValue, setExperienceValue] = useState<number>(
-    minExperience || 0
-  );
-  const [scoreValue, setScoreValue] = useState<number>(
-    minScore || 0
-  );
-  const [projectsValue, setProjectsValue] = useState<number>(
-    minProjects || 0
-  );
+  // Add state for storing fetched options
+  const [formatOptions, setFormatOptions] = useState<FilterOption[]>([]);
+  const [topicOptions, setTopicOptions] = useState<FilterOption[]>([]);
+  const [skillOptions, setSkillOptions] = useState<FilterOption[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Fetch options when component mounts
+  useEffect(() => {
+    const fetchOptions = async () => {
+      try {
+        const response = await fetch('https://a0wtldhbib.execute-api.us-east-1.amazonaws.com/prod/options');
+        const data = await response.json();
+        
+        setFormatOptions(data.storyFormats);
+        setTopicOptions(data.topics);
+        setSkillOptions(data.skills);
+      } catch (error) {
+        console.error('Error fetching options:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchOptions();
+  }, []);
+
+  // Rest of your existing state
+  const [experienceValue, setExperienceValue] = useState<number>(minExperience || 0);
+  const [scoreValue, setScoreValue] = useState<number>(minScore || 0);
+  const [projectsValue, setProjectsValue] = useState<number>(minProjects || 0);
   const [showSettings, setShowSettings] = useState(false);
 
+  // Add state for search loading
+  const [isSearching, setIsSearching] = useState(false);
+
+  // Your existing handlers remain the same
   const handleExperienceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = parseInt(e.target.value);
     setExperienceValue(value);
@@ -110,6 +148,40 @@ export const FilterSidebar = ({
     setResultCount(value);
   };
 
+  // Add search handler
+  const handleSearch = async () => {
+    setIsSearching(true);
+    try {
+      const response = await fetch('https://a0wtldhbib.execute-api.us-east-1.amazonaws.com/prod/talent/search', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          storyFormat: selectedIndustries[0]?.toLowerCase(),
+          topicIds: selectedSpecialties.map(Number),
+          skillIds: selectedSkills.map(Number),
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Search request failed');
+      }
+
+      const data: SearchResponse = await response.json();
+      setTalents(data.contributors || []);
+      setHasSearched(true);
+      
+    } catch (error) {
+      console.error('Search error:', error);
+      setTalents([]);
+      setHasSearched(true);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  // Update the JSX to use the fetched options
   return (
     <div className="bg-white rounded-lg shadow-sm h-[calc(100vh-200px)] flex flex-col">
       {/* Header with buttons */}
@@ -340,43 +412,59 @@ export const FilterSidebar = ({
               </div>
             </div>
 
-            {/* Industries */}
+            {/* Format dropdown */}
             <div>
-              <Label className="text-sm font-medium">Industries</Label>
+              <Label className="text-sm font-medium">Format</Label>
               <div className="mt-1">
                 <FilterSelect
                   value={selectedIndustries}
-                  placeholder="Select industries"
-                  options={industryOptions}
-                  onChange={setSelectedIndustries}
+                  placeholder={isLoading ? "Loading formats..." : "Select a format"}
+                  options={formatOptions}
+                  onChange={(values) => {
+                    // Only take the last selected value for single select
+                    const singleValue = values.length > 0 ? [values[values.length - 1]] : [];
+                    setSelectedIndustries(singleValue);
+                  }}
+                  maxItems={1}
                 />
               </div>
             </div>
 
-            {/* Specialties */}
+            {/* Topics dropdown */}
             <div>
-              <Label className="text-sm font-medium">Specialties</Label>
+              <Label className="text-sm font-medium">Topics</Label>
               <div className="mt-1">
                 <FilterSelect
                   value={selectedSpecialties}
-                  placeholder="Select specialties"
-                  options={specialtyOptions}
+                  placeholder={isLoading ? "Loading topics..." : "Select topics"}
+                  options={topicOptions}
                   onChange={setSelectedSpecialties}
                 />
               </div>
             </div>
 
-            {/* Skills */}
+            {/* Skills dropdown */}
             <div>
               <Label className="text-sm font-medium">Skills</Label>
               <div className="mt-1">
                 <FilterSelect
                   value={selectedSkills}
-                  placeholder="Select skills"
+                  placeholder={isLoading ? "Loading skills..." : "Select skills"}
                   options={skillOptions}
                   onChange={setSelectedSkills}
                 />
               </div>
+            </div>
+
+            {/* Add Search button at the bottom */}
+            <div className="mt-6">
+              <Button 
+                className="w-full"
+                onClick={handleSearch}
+                disabled={isSearching}
+              >
+                {isSearching ? "Searching..." : "SEARCH"}
+              </Button>
             </div>
           </>
         )}

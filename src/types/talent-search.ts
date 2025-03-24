@@ -21,3 +21,24 @@ export interface FilterOption {
   value: string;
   label: string;
 }
+
+export interface TalentData {
+  id: number;
+  name: string;
+  headline: string;
+  bio: string;
+  avatar_url: string;
+  location: string;
+  languages: string[];
+  skills: string[];
+  topics: string[];
+  clips: {
+    id: number;
+    title: string;
+    url: string;
+    publication: string;
+  }[];
+  portfolio: string;
+  status: string;
+  programmatic_position: number;
+}
