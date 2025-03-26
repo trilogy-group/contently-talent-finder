@@ -34,6 +34,9 @@ dist-ssr
 .aws-sam/
 samconfig.toml
 
+# AWS CDK
+cdk.out/
+
 # Build artifacts
 build/
 coverage/
