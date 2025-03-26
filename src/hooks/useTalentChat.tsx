@@ -1,5 +1,10 @@
-import { useState } from "react";
-import { industryOptions, specialtyOptions } from "@/data/mock-talent-profiles";
+import { useState, useEffect } from "react";
+
+interface FilterOption {
+  id: string | number;
+  label: string;
+  value?: string;
+}
 
 interface UseTalentChatProps {
   setSelectedRoles: (roles: string[]) => void;
@@ -10,6 +15,7 @@ interface UseTalentChatProps {
   setMinProjects: (projects: number | null) => void;
   setSortOrder: (order: string) => void;
   setResultCount: (count: number) => void;
+  setContentExamples?: (urls: string[]) => void;
   
   // Current filter states for feedback
   selectedRoles: string[];
@@ -47,9 +53,6 @@ const extractNumber = (text: string): number | null => {
   return null;
 };
 
-const INDUSTRIES = industryOptions.map(option => option.value);
-const SKILLS = specialtyOptions.map(option => option.value);
-
 export const useTalentChat = ({
   setSelectedRoles,
   setSelectedIndustries,
@@ -59,6 +62,7 @@ export const useTalentChat = ({
   setMinProjects,
   setSortOrder,
   setResultCount,
+  setContentExamples = () => {},
   
   // Current filter states
   selectedRoles = [],
@@ -76,6 +80,29 @@ export const useTalentChat = ({
   const [minScore, setMinScoreState] = useState<number | null>(null);
   const [minProjects, setMinProjectsState] = useState<number | null>(null);
   
+  // Add state for filter options
+  const [formatOptions, setFormatOptions] = useState<FilterOption[]>([]);
+  const [topicOptions, setTopicOptions] = useState<FilterOption[]>([]);
+  const [skillOptions, setSkillOptions] = useState<FilterOption[]>([]);
+
+  // Fetch options when component mounts
+  useEffect(() => {
+    const fetchOptions = async () => {
+      try {
+        const response = await fetch('https://a0wtldhbib.execute-api.us-east-1.amazonaws.com/prod/options');
+        const data = await response.json();
+        
+        setFormatOptions(data.storyFormats);
+        setTopicOptions(data.topics);
+        setSkillOptions(data.skills);
+      } catch (error) {
+        console.error('Error fetching options:', error);
+      }
+    };
+
+    fetchOptions();
+  }, []);
+
   // Wrapper functions to update both local state and parent state
   const updateSortOrder = (order: string) => {
     setSortOrderState(order);
@@ -97,7 +124,12 @@ export const useTalentChat = ({
   };
 
   const updateSelectedSkills = (skills: string[]) => {
-    setSelectedSpecialties(skills);
+    setSelectedRoles(skills);
+  };
+
+  // Add this function alongside the other update functions
+  const updateSelectedSpecialties = (specialties: string[]) => {
+    setSelectedSpecialties(specialties);
   };
 
   // Process a chat message and extract filter information
@@ -116,25 +148,26 @@ export const useTalentChat = ({
     // Log the message for debugging
     console.log("Processing chat message:", messageText);
     
-    // Process the message to extract filter information
-    // This is a simplified implementation - in a real app, you would use NLP or AI
     const messageTextLower = messageText.toLowerCase();
-    
-    // Extract industries
-    const industries: string[] = [];
-    INDUSTRIES.forEach(industry => {
-      if (messageTextLower.includes(industry.toLowerCase())) {
-        industries.push(industry);
-      }
-    });
-    
-    // Extract skills/specialties
-    const skills: string[] = [];
-    SKILLS.forEach(skill => {
-      if (messageTextLower.includes(skill.toLowerCase())) {
-        skills.push(skill);
-      }
-    });
+
+    // Extract URLs from the message
+    const urlPattern = /(https?:\/\/[^\s]+)/g;
+    const contentUrls = messageText.match(urlPattern) || [];
+
+    // Extract industries/formats
+    const formats = formatOptions.filter(format => 
+      messageTextLower.includes(format.label.toLowerCase())
+    );
+
+    // Extract topics
+    const topics = topicOptions.filter(topic => 
+      messageTextLower.includes(topic.label.toLowerCase())
+    );
+
+    // Extract skills
+    const skills = skillOptions.filter(skill => 
+      messageTextLower.includes(skill.label.toLowerCase())
+    );
     
     // Look for experience indicators
     let newMinScore = minScore;
@@ -147,14 +180,23 @@ export const useTalentChat = ({
     }
     
     // Update filters if we found any matches
-    const filtersUpdated = industries.length > 0 || skills.length > 0 || newMinScore !== minScore;
+    const filtersUpdated = formats.length > 0 || topics.length > 0 || skills.length > 0 || 
+                          newMinScore !== minScore || contentUrls.length > 0;
     
-    if (industries.length > 0) {
-      updateSelectedIndustries(industries);
+    if (formats.length > 0) {
+      updateSelectedIndustries(formats.map(f => f.value));
+    }
+    
+    if (topics.length > 0) {
+      updateSelectedSpecialties(topics.map(t => t.value));
     }
     
     if (skills.length > 0) {
-      updateSelectedSkills(skills);
+      updateSelectedSkills(skills.map(s => s.value));
+    }
+    
+    if (contentUrls.length > 0) {
+      setContentExamples(contentUrls);
     }
     
     if (newMinScore !== minScore) {
@@ -168,12 +210,20 @@ export const useTalentChat = ({
       if (filtersUpdated) {
         responseContent = `I've updated the following filters based on your request:\n`;
         
-        if (industries.length > 0) {
-          responseContent += `\n• Industries: ${industries.join(", ")}`;
+        if (formats.length > 0) {
+          responseContent += `\n• Format: ${formats.map(f => f.label).join(", ")}`;
+        }
+        
+        if (topics.length > 0) {
+          responseContent += `\n• Topics: ${topics.map(t => t.label).join(", ")}`;
         }
         
         if (skills.length > 0) {
-          responseContent += `\n• Skills: ${skills.join(", ")}`;
+          responseContent += `\n• Skills: ${skills.map(s => s.label).join(", ")}`;
+        }
+
+        if (contentUrls.length > 0) {
+          responseContent += `\n• Content Examples: ${contentUrls.length} URL${contentUrls.length > 1 ? 's' : ''} added`;
         }
         
         if (newMinScore !== minScore) {
@@ -182,7 +232,7 @@ export const useTalentChat = ({
         
         responseContent += `\n\nIs there anything else you'd like to specify?`;
       } else {
-        responseContent = "I couldn't identify specific filters from your message. Could you be more specific about the industries, skills, or experience level you're looking for?";
+        responseContent = "I couldn't identify specific filters from your message. Could you be more specific about the format, topics, skills, or experience level you're looking for? You can also share example content URLs.";
       }
       
       const responseMessage = {

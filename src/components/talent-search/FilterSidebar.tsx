@@ -45,6 +45,8 @@ interface FilterSidebarProps {
   setSortOrder: (sortOrder: string) => void;
   setTalents: (talents: TalentData[]) => void;
   setHasSearched: (hasSearched: boolean) => void;
+  contentExamples: string;
+  setContentExamples: (examples: string) => void;
 }
 
 interface SearchResponse {
@@ -88,6 +90,8 @@ export const FilterSidebar = ({
   setSortOrder,
   setTalents,
   setHasSearched,
+  contentExamples,
+  setContentExamples,
 }: FilterSidebarProps) => {
   // Add state for storing fetched options
   const [formatOptions, setFormatOptions] = useState<FilterOption[]>([]);
@@ -148,10 +152,16 @@ export const FilterSidebar = ({
     setResultCount(value);
   };
 
-  // Add search handler
+  // Update handleSearch function to include content examples
   const handleSearch = async () => {
     setIsSearching(true);
     try {
+      // Split and clean content examples
+      const exampleUrls = contentExamples
+        .split(',')
+        .map(url => url.trim())
+        .filter(url => url.length > 0);
+
       const response = await fetch('https://a0wtldhbib.execute-api.us-east-1.amazonaws.com/prod/talent/search', {
         method: 'POST',
         headers: {
@@ -161,6 +171,7 @@ export const FilterSidebar = ({
           storyFormat: selectedIndustries[0]?.toLowerCase(),
           topicIds: selectedSpecialties.map(Number),
           skillIds: selectedSkills.map(Number),
+          contentExamples: exampleUrls,
         }),
       });
 
@@ -206,9 +217,11 @@ export const FilterSidebar = ({
                       setExperienceValue(0);
                       setScoreValue(0);
                       setProjectsValue(0);
+                      setContentExamples("");
                     } else if (searchMode === "filters") {
                       // Reset filters
                       resetFilters();
+                      setContentExamples("");
                     }
                   }}
                 >
@@ -399,19 +412,6 @@ export const FilterSidebar = ({
           </div>
         ) : (
           <>
-            {/* Search term */}
-            <div>
-              <Label className="text-sm font-medium">Search Term</Label>
-              <div className="mt-1">
-                <Input
-                  type="text"
-                  placeholder="Search by keyword"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-              </div>
-            </div>
-
             {/* Format dropdown */}
             <div>
               <Label className="text-sm font-medium">Format</Label>
@@ -453,6 +453,22 @@ export const FilterSidebar = ({
                   options={skillOptions}
                   onChange={setSelectedSkills}
                 />
+              </div>
+            </div>
+
+            {/* Content Examples field */}
+            <div>
+              <Label className="text-sm font-medium">Content Examples</Label>
+              <div className="mt-1">
+                <Input
+                  type="text"
+                  placeholder="Enter 3-10 URLs separated by commas"
+                  value={contentExamples}
+                  onChange={(e) => setContentExamples(e.target.value)}
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Minimum 3, maximum 10 URLs, separated by commas
+                </p>
               </div>
             </div>
 

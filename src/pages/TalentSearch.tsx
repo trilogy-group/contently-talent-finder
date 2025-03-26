@@ -58,6 +58,9 @@ const TalentSearch = () => {
   const [talents, setTalents] = useState<TalentData[]>([]);
   const [hasSearched, setHasSearched] = useState(false);
 
+  // Add state for content examples
+  const [contentExamples, setContentExamples] = useState<string>("");
+
   // Wrapper functions for state updates
   const updateSelectedIndustries = (industries: string[]) => {
     // Check if industry already exists
@@ -107,10 +110,7 @@ const TalentSearch = () => {
     minProjects: chatMinProjects,
     setMinProjects: setChatMinProjects
   } = useTalentChat({
-    setSelectedRoles: (roles: string[]) => {
-      console.log("Roles received in TalentSearch:", roles);
-      // No direct roles in V4, but could map to skills or specialties if needed
-    },
+    setSelectedRoles: updateSelectedSkills,
     setSelectedIndustries: updateSelectedIndustries,
     setSelectedSpecialties: updateSelectedSpecialties,
     setMinExperience,
@@ -118,9 +118,12 @@ const TalentSearch = () => {
     setMinProjects,
     setSortOrder,
     setResultCount,
+    setContentExamples: (urls: string[]) => {
+      setContentExamples(urls.join(', '));
+    },
     
     // Current filter states for feedback
-    selectedRoles: [],
+    selectedRoles: selectedSkills,
     selectedIndustries,
     selectedSpecialties
   });
@@ -314,6 +317,8 @@ const TalentSearch = () => {
                   setSortOrder={setSortOrder}
                   setTalents={setTalents}
                   setHasSearched={setHasSearched}
+                  contentExamples={contentExamples}
+                  setContentExamples={setContentExamples}
                 />
               ) : (
                 <ChatSidebar
