@@ -134,4 +134,4 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
       body: JSON.stringify({ error: 'Internal server error' })
     };
   }
-}; 
+};

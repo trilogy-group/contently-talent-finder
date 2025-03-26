@@ -44,4 +44,4 @@ export interface Pillar {
 export interface SeoKeyword {
   id?: number;
   name: string;
-} 
+}
