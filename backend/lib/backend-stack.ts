@@ -148,8 +148,8 @@ export class BackendStack extends cdk.Stack {
       timeout: cdk.Duration.minutes(3),
       vpc,
       environment: {
-        CONTENTLY_API_ENDPOINT: process.env.CONTENTLY_API_ENDPOINT || '',
-        CONTENTLY_API_KEY: process.env.CONTENTLY_API_KEY || ''
+        CONTENTLY_API_ENDPOINT: process.env.CONTENTLY_API_ENDPOINT || 'https://snuffl.in',
+        CONTENTLY_API_KEY: process.env.CONTENTLY_API_KEY || 'vrmVRqar57W4rkKSZvgDKjazmBLEBUcM'
       },
       bundling: {
         minify: true,
@@ -166,8 +166,8 @@ export class BackendStack extends cdk.Stack {
       timeout: cdk.Duration.minutes(3),
       vpc,
       environment: {
-        CONTENTLY_API_ENDPOINT: process.env.CONTENTLY_API_ENDPOINT || '',
-        CONTENTLY_API_KEY: process.env.CONTENTLY_API_KEY || ''
+        CONTENTLY_API_ENDPOINT: process.env.CONTENTLY_API_ENDPOINT || 'https://snuffl.in',
+        CONTENTLY_API_KEY: process.env.CONTENTLY_API_KEY || 'vrmVRqar57W4rkKSZvgDKjazmBLEBUcM'
       },
       bundling: {
         minify: true,
@@ -204,8 +204,8 @@ export class BackendStack extends cdk.Stack {
       timeout: cdk.Duration.minutes(3),
       vpc,
       environment: {
-        CONTENTLY_API_ENDPOINT: process.env.CONTENTLY_API_ENDPOINT || '',
-        CONTENTLY_API_KEY: process.env.CONTENTLY_API_KEY || ''
+        CONTENTLY_API_ENDPOINT: process.env.CONTENTLY_API_ENDPOINT || 'https://snuffl.in',
+        CONTENTLY_API_KEY: process.env.CONTENTLY_API_KEY || 'vrmVRqar57W4rkKSZvgDKjazmBLEBUcM'
       },
       bundling: {
         minify: true,
@@ -223,8 +223,8 @@ export class BackendStack extends cdk.Stack {
       timeout: cdk.Duration.minutes(3),
       vpc,
       environment: {
-        CONTENTLY_API_ENDPOINT: process.env.CONTENTLY_API_ENDPOINT || '',
-        CONTENTLY_API_KEY: process.env.CONTENTLY_API_KEY || ''
+        CONTENTLY_API_ENDPOINT: process.env.CONTENTLY_API_ENDPOINT || 'https://snuffl.in',
+        CONTENTLY_API_KEY: process.env.CONTENTLY_API_KEY || 'vrmVRqar57W4rkKSZvgDKjazmBLEBUcM'
       },
       bundling: {
         minify: true,
@@ -251,8 +251,8 @@ export class BackendStack extends cdk.Stack {
       timeout: cdk.Duration.minutes(3),
       vpc,
       environment: {
-        CONTENTLY_API_ENDPOINT: process.env.CONTENTLY_API_ENDPOINT || '',
-        CONTENTLY_API_KEY: process.env.CONTENTLY_API_KEY || ''
+        CONTENTLY_API_ENDPOINT: process.env.CONTENTLY_API_ENDPOINT || 'https://snuffl.in',
+        CONTENTLY_API_KEY: process.env.CONTENTLY_API_KEY || 'vrmVRqar57W4rkKSZvgDKjazmBLEBUcM'
       },
       bundling: {
         minify: true,
@@ -270,8 +270,8 @@ export class BackendStack extends cdk.Stack {
       timeout: cdk.Duration.minutes(3),
       vpc,
       environment: {
-        CONTENTLY_API_ENDPOINT: process.env.CONTENTLY_API_ENDPOINT || '',
-        CONTENTLY_API_KEY: process.env.CONTENTLY_API_KEY || ''
+        CONTENTLY_API_ENDPOINT: process.env.CONTENTLY_API_ENDPOINT || 'https://snuffl.in',
+        CONTENTLY_API_KEY: process.env.CONTENTLY_API_KEY || 'vrmVRqar57W4rkKSZvgDKjazmBLEBUcM'
       },
       bundling: {
         minify: true,
@@ -302,8 +302,8 @@ export class BackendStack extends cdk.Stack {
       timeout: cdk.Duration.minutes(3),
       vpc,
       environment: {
-        CONTENTLY_API_ENDPOINT: process.env.CONTENTLY_API_ENDPOINT || '',
-        CONTENTLY_API_KEY: process.env.CONTENTLY_API_KEY || ''
+        CONTENTLY_API_ENDPOINT: process.env.CONTENTLY_API_ENDPOINT || 'https://snuffl.in',
+        CONTENTLY_API_KEY: process.env.CONTENTLY_API_KEY || 'vrmVRqar57W4rkKSZvgDKjazmBLEBUcM'
       },
       bundling: {
         minify: true,
@@ -321,8 +321,8 @@ export class BackendStack extends cdk.Stack {
       timeout: cdk.Duration.minutes(3),
       vpc,
       environment: {
-        CONTENTLY_API_ENDPOINT: process.env.CONTENTLY_API_ENDPOINT || '',
-        CONTENTLY_API_KEY: process.env.CONTENTLY_API_KEY || ''
+        CONTENTLY_API_ENDPOINT: process.env.CONTENTLY_API_ENDPOINT || 'https://snuffl.in',
+        CONTENTLY_API_KEY: process.env.CONTENTLY_API_KEY || 'vrmVRqar57W4rkKSZvgDKjazmBLEBUcM'
       },
       bundling: {
         minify: true,
@@ -356,8 +356,8 @@ export class BackendStack extends cdk.Stack {
       timeout: cdk.Duration.minutes(3),
       vpc,
       environment: {
-        CONTENTLY_API_ENDPOINT: process.env.CONTENTLY_API_ENDPOINT || '',
-        CONTENTLY_API_KEY: process.env.CONTENTLY_API_KEY || ''
+        CONTENTLY_API_ENDPOINT: process.env.CONTENTLY_API_ENDPOINT || 'https://snuffl.in',
+        CONTENTLY_API_KEY: process.env.CONTENTLY_API_KEY || 'vrmVRqar57W4rkKSZvgDKjazmBLEBUcM'
       },
       bundling: {
         minify: true,
