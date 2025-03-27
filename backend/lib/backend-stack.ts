@@ -148,8 +148,8 @@ export class BackendStack extends cdk.Stack {
       timeout: cdk.Duration.minutes(3),
       vpc,
       environment: {
-        CONTENTLY_API_ENDPOINT: process.env.CONTENTLY_API_ENDPOINT || 'https://snuffl.in',
-        CONTENTLY_API_KEY: process.env.CONTENTLY_API_KEY || 'vrmVRqar57W4rkKSZvgDKjazmBLEBUcM'
+        CONTENTLY_API_ENDPOINT: process.env.CONTENTLY_API_ENDPOINT || '',
+        CONTENTLY_API_KEY: process.env.CONTENTLY_API_KEY || ''
       },
       bundling: {
         minify: true,
@@ -166,8 +166,8 @@ export class BackendStack extends cdk.Stack {
       timeout: cdk.Duration.minutes(3),
       vpc,
       environment: {
-        CONTENTLY_API_ENDPOINT: process.env.CONTENTLY_API_ENDPOINT || 'https://snuffl.in',
-        CONTENTLY_API_KEY: process.env.CONTENTLY_API_KEY || 'vrmVRqar57W4rkKSZvgDKjazmBLEBUcM'
+        CONTENTLY_API_ENDPOINT: process.env.CONTENTLY_API_ENDPOINT || '',
+        CONTENTLY_API_KEY: process.env.CONTENTLY_API_KEY || ''
       },
       bundling: {
         minify: true,
@@ -204,8 +204,8 @@ export class BackendStack extends cdk.Stack {
       timeout: cdk.Duration.minutes(3),
       vpc,
       environment: {
-        CONTENTLY_API_ENDPOINT: process.env.CONTENTLY_API_ENDPOINT || 'https://snuffl.in',
-        CONTENTLY_API_KEY: process.env.CONTENTLY_API_KEY || 'vrmVRqar57W4rkKSZvgDKjazmBLEBUcM'
+        CONTENTLY_API_ENDPOINT: process.env.CONTENTLY_API_ENDPOINT || '',
+        CONTENTLY_API_KEY: process.env.CONTENTLY_API_KEY || ''
       },
       bundling: {
         minify: true,
@@ -223,8 +223,8 @@ export class BackendStack extends cdk.Stack {
       timeout: cdk.Duration.minutes(3),
       vpc,
       environment: {
-        CONTENTLY_API_ENDPOINT: process.env.CONTENTLY_API_ENDPOINT || 'https://snuffl.in',
-        CONTENTLY_API_KEY: process.env.CONTENTLY_API_KEY || 'vrmVRqar57W4rkKSZvgDKjazmBLEBUcM'
+        CONTENTLY_API_ENDPOINT: process.env.CONTENTLY_API_ENDPOINT || '',
+        CONTENTLY_API_KEY: process.env.CONTENTLY_API_KEY || ''
       },
       bundling: {
         minify: true,
@@ -251,8 +251,8 @@ export class BackendStack extends cdk.Stack {
       timeout: cdk.Duration.minutes(3),
       vpc,
       environment: {
-        CONTENTLY_API_ENDPOINT: process.env.CONTENTLY_API_ENDPOINT || 'https://snuffl.in',
-        CONTENTLY_API_KEY: process.env.CONTENTLY_API_KEY || 'vrmVRqar57W4rkKSZvgDKjazmBLEBUcM'
+        CONTENTLY_API_ENDPOINT: process.env.CONTENTLY_API_ENDPOINT || '',
+        CONTENTLY_API_KEY: process.env.CONTENTLY_API_KEY || ''
       },
       bundling: {
         minify: true,
@@ -270,8 +270,8 @@ export class BackendStack extends cdk.Stack {
       timeout: cdk.Duration.minutes(3),
       vpc,
       environment: {
-        CONTENTLY_API_ENDPOINT: process.env.CONTENTLY_API_ENDPOINT || 'https://snuffl.in',
-        CONTENTLY_API_KEY: process.env.CONTENTLY_API_KEY || 'vrmVRqar57W4rkKSZvgDKjazmBLEBUcM'
+        CONTENTLY_API_ENDPOINT: process.env.CONTENTLY_API_ENDPOINT || '',
+        CONTENTLY_API_KEY: process.env.CONTENTLY_API_KEY || ''
       },
       bundling: {
         minify: true,
@@ -302,8 +302,8 @@ export class BackendStack extends cdk.Stack {
       timeout: cdk.Duration.minutes(3),
       vpc,
       environment: {
-        CONTENTLY_API_ENDPOINT: process.env.CONTENTLY_API_ENDPOINT || 'https://snuffl.in',
-        CONTENTLY_API_KEY: process.env.CONTENTLY_API_KEY || 'vrmVRqar57W4rkKSZvgDKjazmBLEBUcM'
+        CONTENTLY_API_ENDPOINT: process.env.CONTENTLY_API_ENDPOINT || '',
+        CONTENTLY_API_KEY: process.env.CONTENTLY_API_KEY || ''
       },
       bundling: {
         minify: true,
@@ -321,8 +321,8 @@ export class BackendStack extends cdk.Stack {
       timeout: cdk.Duration.minutes(3),
       vpc,
       environment: {
-        CONTENTLY_API_ENDPOINT: process.env.CONTENTLY_API_ENDPOINT || 'https://snuffl.in',
-        CONTENTLY_API_KEY: process.env.CONTENTLY_API_KEY || 'vrmVRqar57W4rkKSZvgDKjazmBLEBUcM'
+        CONTENTLY_API_ENDPOINT: process.env.CONTENTLY_API_ENDPOINT || '',
+        CONTENTLY_API_KEY: process.env.CONTENTLY_API_KEY || ''
       },
       bundling: {
         minify: true,
@@ -345,5 +345,32 @@ export class BackendStack extends cdk.Stack {
     
     const seoKeyword = seoKeywords.addResource('{keywordId}');
     seoKeyword.addMethod('DELETE', new apigateway.LambdaIntegration(seoKeywordsFunction));
+
+    // Plans Lambda
+    const plansFunction = new nodejs.NodejsFunction(this, 'PlansFunction', {
+      entry: 'src/functions/content-strategy/plans/index.ts',
+      handler: 'handler',
+      runtime: lambda.Runtime.NODEJS_22_X,
+      role: lambdaRole,
+      memorySize: 2048,
+      timeout: cdk.Duration.minutes(3),
+      vpc,
+      environment: {
+        CONTENTLY_API_ENDPOINT: process.env.CONTENTLY_API_ENDPOINT || '',
+        CONTENTLY_API_KEY: process.env.CONTENTLY_API_KEY || ''
+      },
+      bundling: {
+        minify: true,
+        sourceMap: true,
+      },
+    });
+
+    // Add routes to API Gateway
+    const plans = publication.addResource('plans');
+    plans.addMethod('GET', new apigateway.LambdaIntegration(plansFunction));
+    
+    const plan = plans.addResource('{pillarId}');
+    plan.addMethod('GET', new apigateway.LambdaIntegration(plansFunction));
+    plan.addMethod('PUT', new apigateway.LambdaIntegration(plansFunction));
   }
 }
