@@ -137,5 +137,240 @@ export class BackendStack extends cdk.Stack {
     // Add new endpoint for dropdown options
     const optionsResource = api.root.addResource('options');
     optionsResource.addMethod('GET', new apigateway.LambdaIntegration(dropdownOptionsFunction));
+
+    // Content Strategy API
+    const getContentStrategyOverview = new nodejs.NodejsFunction(this, 'GetContentStrategyOverviewFunction', {
+      entry: 'src/functions/content-strategy/get-overview/index.ts',
+      handler: 'handler',
+      runtime: lambda.Runtime.NODEJS_22_X,
+      role: lambdaRole,
+      memorySize: 2048,
+      timeout: cdk.Duration.minutes(3),
+      vpc,
+      environment: {
+        CONTENTLY_API_ENDPOINT: process.env.CONTENTLY_API_ENDPOINT || 'https://snuffl.in',
+        CONTENTLY_API_KEY: process.env.CONTENTLY_API_KEY || 'vrmVRqar57W4rkKSZvgDKjazmBLEBUcM'
+      },
+      bundling: {
+        minify: true,
+        sourceMap: true,
+      },
+    });
+
+    const getContentStrategyReport = new nodejs.NodejsFunction(this, 'GetContentStrategyReportFunction', {
+      entry: 'src/functions/content-strategy/get-report/index.ts',
+      handler: 'handler',
+      runtime: lambda.Runtime.NODEJS_22_X,
+      role: lambdaRole,
+      memorySize: 2048,
+      timeout: cdk.Duration.minutes(3),
+      vpc,
+      environment: {
+        CONTENTLY_API_ENDPOINT: process.env.CONTENTLY_API_ENDPOINT || 'https://snuffl.in',
+        CONTENTLY_API_KEY: process.env.CONTENTLY_API_KEY || 'vrmVRqar57W4rkKSZvgDKjazmBLEBUcM'
+      },
+      bundling: {
+        minify: true,
+        sourceMap: true,
+      },
+    });
+
+    // API Gateway
+    const contentStrategyApi = new apigateway.RestApi(this, 'ContentStrategyApi', {
+      restApiName: 'Content Strategy Service',
+      defaultCorsPreflightOptions: {
+        allowOrigins: apigateway.Cors.ALL_ORIGINS,
+        allowMethods: apigateway.Cors.ALL_METHODS
+      }
+    });
+
+    const contentStrategy = contentStrategyApi.root.addResource('content-strategy');
+    const publication = contentStrategy.addResource('{publicationId}');
+    
+    // Overview endpoint
+    publication.addMethod('GET', new apigateway.LambdaIntegration(getContentStrategyOverview));
+    
+    // Report endpoint
+    const report = publication.addResource('report');
+    report.addMethod('GET', new apigateway.LambdaIntegration(getContentStrategyReport));
+
+    // Mission and Goals Lambda
+    const missionAndGoalsFunction = new nodejs.NodejsFunction(this, 'MissionAndGoalsFunction', {
+      entry: 'src/functions/content-strategy/mission-and-goals/index.ts',
+      handler: 'handler',
+      runtime: lambda.Runtime.NODEJS_22_X,
+      role: lambdaRole,
+      memorySize: 2048,
+      timeout: cdk.Duration.minutes(3),
+      vpc,
+      environment: {
+        CONTENTLY_API_ENDPOINT: process.env.CONTENTLY_API_ENDPOINT || 'https://snuffl.in',
+        CONTENTLY_API_KEY: process.env.CONTENTLY_API_KEY || 'vrmVRqar57W4rkKSZvgDKjazmBLEBUcM'
+      },
+      bundling: {
+        minify: true,
+        sourceMap: true,
+      },
+    });
+
+    // Voice and Styles Lambda
+    const voiceAndStylesFunction = new nodejs.NodejsFunction(this, 'VoiceAndStylesFunction', {
+      entry: 'src/functions/content-strategy/voice-and-styles/index.ts',
+      handler: 'handler',
+      runtime: lambda.Runtime.NODEJS_22_X,
+      role: lambdaRole,
+      memorySize: 2048,
+      timeout: cdk.Duration.minutes(3),
+      vpc,
+      environment: {
+        CONTENTLY_API_ENDPOINT: process.env.CONTENTLY_API_ENDPOINT || 'https://snuffl.in',
+        CONTENTLY_API_KEY: process.env.CONTENTLY_API_KEY || 'vrmVRqar57W4rkKSZvgDKjazmBLEBUcM'
+      },
+      bundling: {
+        minify: true,
+        sourceMap: true,
+      },
+    });
+
+    // Add routes to API Gateway
+    const missionAndGoals = publication.addResource('mission-and-goals');
+    missionAndGoals.addMethod('GET', new apigateway.LambdaIntegration(missionAndGoalsFunction));
+    missionAndGoals.addMethod('PUT', new apigateway.LambdaIntegration(missionAndGoalsFunction));
+
+    const voiceAndStyles = publication.addResource('voice-and-styles');
+    voiceAndStyles.addMethod('GET', new apigateway.LambdaIntegration(voiceAndStylesFunction));
+    voiceAndStyles.addMethod('PUT', new apigateway.LambdaIntegration(voiceAndStylesFunction));
+
+    // Distribution Lambda
+    const distributionFunction = new nodejs.NodejsFunction(this, 'DistributionFunction', {
+      entry: 'src/functions/content-strategy/distribution/index.ts',
+      handler: 'handler',
+      runtime: lambda.Runtime.NODEJS_22_X,
+      role: lambdaRole,
+      memorySize: 2048,
+      timeout: cdk.Duration.minutes(3),
+      vpc,
+      environment: {
+        CONTENTLY_API_ENDPOINT: process.env.CONTENTLY_API_ENDPOINT || 'https://snuffl.in',
+        CONTENTLY_API_KEY: process.env.CONTENTLY_API_KEY || 'vrmVRqar57W4rkKSZvgDKjazmBLEBUcM'
+      },
+      bundling: {
+        minify: true,
+        sourceMap: true,
+      },
+    });
+
+    // Audiences Lambda
+    const audiencesFunction = new nodejs.NodejsFunction(this, 'AudiencesFunction', {
+      entry: 'src/functions/content-strategy/audiences/index.ts',
+      handler: 'handler',
+      runtime: lambda.Runtime.NODEJS_22_X,
+      role: lambdaRole,
+      memorySize: 2048,
+      timeout: cdk.Duration.minutes(3),
+      vpc,
+      environment: {
+        CONTENTLY_API_ENDPOINT: process.env.CONTENTLY_API_ENDPOINT || 'https://snuffl.in',
+        CONTENTLY_API_KEY: process.env.CONTENTLY_API_KEY || 'vrmVRqar57W4rkKSZvgDKjazmBLEBUcM'
+      },
+      bundling: {
+        minify: true,
+        sourceMap: true,
+      },
+    });
+
+    // Add routes to API Gateway
+    const distribution = publication.addResource('distribution');
+    distribution.addMethod('GET', new apigateway.LambdaIntegration(distributionFunction));
+    distribution.addMethod('PUT', new apigateway.LambdaIntegration(distributionFunction));
+
+    const audiences = publication.addResource('audiences');
+    audiences.addMethod('GET', new apigateway.LambdaIntegration(audiencesFunction));
+    audiences.addMethod('POST', new apigateway.LambdaIntegration(audiencesFunction));
+    
+    const audience = audiences.addResource('{audienceId}');
+    audience.addMethod('PUT', new apigateway.LambdaIntegration(audiencesFunction));
+    audience.addMethod('DELETE', new apigateway.LambdaIntegration(audiencesFunction));
+
+    // Pillars Lambda
+    const pillarsFunction = new nodejs.NodejsFunction(this, 'PillarsFunction', {
+      entry: 'src/functions/content-strategy/pillars/index.ts',
+      handler: 'handler',
+      runtime: lambda.Runtime.NODEJS_22_X,
+      role: lambdaRole,
+      memorySize: 2048,
+      timeout: cdk.Duration.minutes(3),
+      vpc,
+      environment: {
+        CONTENTLY_API_ENDPOINT: process.env.CONTENTLY_API_ENDPOINT || 'https://snuffl.in',
+        CONTENTLY_API_KEY: process.env.CONTENTLY_API_KEY || 'vrmVRqar57W4rkKSZvgDKjazmBLEBUcM'
+      },
+      bundling: {
+        minify: true,
+        sourceMap: true,
+      },
+    });
+
+    // SEO Keywords Lambda
+    const seoKeywordsFunction = new nodejs.NodejsFunction(this, 'SeoKeywordsFunction', {
+      entry: 'src/functions/content-strategy/seo-keywords/index.ts',
+      handler: 'handler',
+      runtime: lambda.Runtime.NODEJS_22_X,
+      role: lambdaRole,
+      memorySize: 2048,
+      timeout: cdk.Duration.minutes(3),
+      vpc,
+      environment: {
+        CONTENTLY_API_ENDPOINT: process.env.CONTENTLY_API_ENDPOINT || 'https://snuffl.in',
+        CONTENTLY_API_KEY: process.env.CONTENTLY_API_KEY || 'vrmVRqar57W4rkKSZvgDKjazmBLEBUcM'
+      },
+      bundling: {
+        minify: true,
+        sourceMap: true,
+      },
+    });
+
+    // Add routes to API Gateway
+    const pillars = publication.addResource('pillars');
+    pillars.addMethod('GET', new apigateway.LambdaIntegration(pillarsFunction));
+    pillars.addMethod('POST', new apigateway.LambdaIntegration(pillarsFunction));
+    
+    const pillar = pillars.addResource('{pillarId}');
+    pillar.addMethod('PUT', new apigateway.LambdaIntegration(pillarsFunction));
+    pillar.addMethod('DELETE', new apigateway.LambdaIntegration(pillarsFunction));
+
+    const seoKeywords = publication.addResource('seo-keywords');
+    seoKeywords.addMethod('GET', new apigateway.LambdaIntegration(seoKeywordsFunction));
+    seoKeywords.addMethod('POST', new apigateway.LambdaIntegration(seoKeywordsFunction));
+    
+    const seoKeyword = seoKeywords.addResource('{keywordId}');
+    seoKeyword.addMethod('DELETE', new apigateway.LambdaIntegration(seoKeywordsFunction));
+
+    // Plans Lambda
+    const plansFunction = new nodejs.NodejsFunction(this, 'PlansFunction', {
+      entry: 'src/functions/content-strategy/plans/index.ts',
+      handler: 'handler',
+      runtime: lambda.Runtime.NODEJS_22_X,
+      role: lambdaRole,
+      memorySize: 2048,
+      timeout: cdk.Duration.minutes(3),
+      vpc,
+      environment: {
+        CONTENTLY_API_ENDPOINT: process.env.CONTENTLY_API_ENDPOINT || 'https://snuffl.in',
+        CONTENTLY_API_KEY: process.env.CONTENTLY_API_KEY || 'vrmVRqar57W4rkKSZvgDKjazmBLEBUcM'
+      },
+      bundling: {
+        minify: true,
+        sourceMap: true,
+      },
+    });
+
+    // Add routes to API Gateway
+    const plans = publication.addResource('plans');
+    plans.addMethod('GET', new apigateway.LambdaIntegration(plansFunction));
+    
+    const plan = plans.addResource('{pillarId}');
+    plan.addMethod('GET', new apigateway.LambdaIntegration(plansFunction));
+    plan.addMethod('PUT', new apigateway.LambdaIntegration(plansFunction));
   }
 }
