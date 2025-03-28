@@ -7,7 +7,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import { CardRadioSelector } from "@/components/brand/CardRadioSelector";
 import { Target, Users, Wand2, Upload } from "lucide-react";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
+import { contentStrategyApi } from "@/utils/api";
+import { showToastAlert } from "@/components/ui/toast-alert";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
 
 interface KpiOption {
   id: string;
@@ -24,12 +29,13 @@ interface GoalsTabContentProps {
   needsRecommendations: boolean;
   setNeedsRecommendations: (value: boolean) => void;
   selectedKpis: string[];
-  toggleKpi: (kpiId: string) => void;
-  kpiOptions: KpiOption[];
+  toggleKpi: (kpi: string) => void;
+  kpiOptions: { value: string; label: string }[];
   isEditing: boolean;
+  isLoading?: boolean;
 }
 
-export function GoalsTabContent({
+export const GoalsTabContent: React.FC<GoalsTabContentProps> = ({
   primaryGoal,
   setPrimaryGoal,
   orgType,
@@ -41,8 +47,9 @@ export function GoalsTabContent({
   selectedKpis,
   toggleKpi,
   kpiOptions,
-  isEditing
-}: GoalsTabContentProps) {
+  isEditing,
+  isLoading = false
+}) => {
   const primaryGoalOptions = [
     {
       value: "brand_awareness",
@@ -72,6 +79,29 @@ export function GoalsTabContent({
   const [isEnhancing, setIsEnhancing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Save changes when editing is toggled off
+  useEffect(() => {
+    if (!isEditing) {
+      handleSave();
+    }
+  }, [isEditing]);
+
+  const handleSave = async () => {
+    try {
+      await contentStrategyApi.updateMissionAndGoals({
+        primaryGoal,
+        orgType,
+        contentMission,
+        needsRecommendations,
+        selectedKpis
+      });
+      showToastAlert('Goals and mission updated successfully!', 'success');
+    } catch (error) {
+      console.error('Error updating goals and mission:', error);
+      showToastAlert('Error updating goals and mission. Please try again.', 'error');
+    }
+  };
+
   const handleAIEnhance = () => {
     setIsEnhancing(true);
     // Simulate AI enhancement
@@ -97,132 +127,122 @@ export function GoalsTabContent({
   };
 
   return (
-    <Card className="w-full">
-      <CardContent className="pt-6 space-y-6">
-        <div>
-          <div className="flex justify-between items-center mb-4">
-            <div className="w-2/3">
-              <div className="flex items-center gap-2">
-                <h3 className="text-md font-medium">Primary goal</h3>
-              </div>
+    <div className="space-y-6">
+      <Card className="overflow-hidden">
+        <CardContent className="p-6">
+          {isLoading ? (
+            <div className="space-y-4">
+              <div className="h-8 bg-gray-200 animate-pulse rounded" />
+              <div className="h-32 bg-gray-200 animate-pulse rounded" />
+              <div className="h-8 bg-gray-200 animate-pulse rounded" />
             </div>
-            <div className="w-1/3 pl-8">
-              <div className="flex items-center gap-2">
-                <h3 className="text-md font-medium">Organization type</h3>
-              </div>
-            </div>
-          </div>
-          <div className="flex items-start">
-            <div className="w-2/3 pr-4">
-              <CardRadioSelector
-                name="primary-goal"
-                value={primaryGoal}
-                options={primaryGoalOptions}
-                onChange={setPrimaryGoal}
-                disabled={!isEditing}
-                className="grid-cols-2"
-              />
-            </div>
-            <Separator orientation="vertical" className="mx-2 h-16" />
-            <div className="w-1/3 pl-4">
-              <CardRadioSelector
-                name="org-type"
-                value={orgType}
-                options={orgTypeOptions}
-                onChange={setOrgType}
-                disabled={!isEditing}
-                variant="orange"
-                className="grid-cols-2"
-              />
-            </div>
-          </div>
-        </div>
-
-        <div className="relative">
-          <div className="flex justify-between items-center mb-2">
-            <h3 className="text-md font-medium">Content mission</h3>
-            {isEditing && (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 rounded-full hover:bg-brand-accent hover:text-brand-primary"
-                onClick={handleAIEnhance}
-                disabled={isEnhancing}
-              >
-                <Wand2 className={`h-5 w-5 ${isEnhancing ? 'animate-pulse' : ''}`} />
-              </Button>
-            )}
-          </div>
-          {isEditing ? (
-            <Textarea 
-              value={contentMission}
-              onChange={(e) => setContentMission(e.target.value)}
-              className="h-32"
-              placeholder="Enter your content mission statement..."
-            />
           ) : (
-            <div className="bg-slate-50 p-3 rounded-md">
-              <p className="text-sm whitespace-pre-line">{contentMission}</p>
+            <div className="space-y-4">
+              {/* Primary Goal Section */}
+              <div>
+                <h3 className="text-lg font-medium text-gray-800 mb-2">Primary Goal</h3>
+                <p className="text-sm text-gray-500 mb-4">What's the main objective of your content strategy?</p>
+                
+                <RadioGroup
+                  value={primaryGoal}
+                  onValueChange={setPrimaryGoal}
+                  disabled={!isEditing}
+                  className="space-y-2"
+                >
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="brand_awareness" id="brand_awareness" />
+                    <Label htmlFor="brand_awareness">Brand Awareness</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="lead_generation" id="lead_generation" />
+                    <Label htmlFor="lead_generation">Lead Generation</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="thought_leadership" id="thought_leadership" />
+                    <Label htmlFor="thought_leadership">Thought Leadership</Label>
+                  </div>
+                </RadioGroup>
+              </div>
+
+              {/* Organization Type Section */}
+              <div className="mt-6">
+                <h3 className="text-lg font-medium text-gray-800 mb-2">Organization Type</h3>
+                <p className="text-sm text-gray-500 mb-4">What type of organization are you creating content for?</p>
+                
+                <RadioGroup
+                  value={orgType}
+                  onValueChange={setOrgType}
+                  disabled={!isEditing}
+                  className="space-y-2"
+                >
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="b2b" id="b2b" />
+                    <Label htmlFor="b2b">B2B</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="b2c" id="b2c" />
+                    <Label htmlFor="b2c">B2C</Label>
+                  </div>
+                </RadioGroup>
+              </div>
+
+              {/* Content Mission Section */}
+              <div className="mt-6">
+                <h3 className="text-lg font-medium text-gray-800 mb-2">Content Mission</h3>
+                <p className="text-sm text-gray-500 mb-4">Define the purpose of your content strategy in a clear, concise statement.</p>
+                
+                {isEditing ? (
+                  <Textarea
+                    value={contentMission}
+                    onChange={(e) => setContentMission(e.target.value)}
+                    placeholder="Enter your content mission statement..."
+                    className="h-32"
+                  />
+                ) : (
+                  <div className="p-4 bg-gray-50 rounded-lg whitespace-pre-line min-h-[80px]">
+                    {contentMission || "No content mission defined."}
+                  </div>
+                )}
+              </div>
+
+              {/* KPIs Section */}
+              <div className="mt-6">
+                <h3 className="text-lg font-medium text-gray-800 mb-2">Key Performance Indicators (KPIs)</h3>
+                <p className="text-sm text-gray-500 mb-4">Select the metrics you'll use to measure success.</p>
+                
+                <div className="space-y-2">
+                  {kpiOptions.map((kpi) => (
+                    <div key={kpi.value} className="flex items-center justify-between">
+                      <Label htmlFor={kpi.value}>{kpi.label}</Label>
+                      <Switch
+                        id={kpi.value}
+                        checked={selectedKpis.includes(kpi.value)}
+                        onCheckedChange={() => toggleKpi(kpi.value)}
+                        disabled={!isEditing}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* AI Recommendations Section */}
+              <div className="mt-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-lg font-medium text-gray-800">AI Recommendations</h3>
+                    <p className="text-sm text-gray-500">Enable AI-powered content recommendations</p>
+                  </div>
+                  <Switch
+                    checked={needsRecommendations}
+                    onCheckedChange={setNeedsRecommendations}
+                    disabled={!isEditing}
+                  />
+                </div>
+              </div>
             </div>
           )}
-        </div>
-
-        <div>
-          <h3 className="text-md font-medium mb-2">Content marketing KPIs</h3>
-          <div className="grid grid-cols-2 gap-2">
-            {kpiOptions.map(kpi => (
-              <div key={kpi.id} className="flex items-center space-x-2">
-                <Checkbox 
-                  id={kpi.id} 
-                  checked={selectedKpis.includes(kpi.id)}
-                  onCheckedChange={() => toggleKpi(kpi.id)}
-                  disabled={!isEditing}
-                />
-                <Label htmlFor={kpi.id}>{kpi.label}</Label>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div>
-          <h3 className="text-md font-medium mb-2">Prospect would like recommendations</h3>
-          <div className="flex items-center space-x-2">
-            <Checkbox 
-              id="recommendations" 
-              checked={needsRecommendations}
-              onCheckedChange={(checked) => {
-                setNeedsRecommendations(checked as boolean);
-              }}
-              disabled={!isEditing}
-            />
-            <Label htmlFor="recommendations">Yes, provide recommendations</Label>
-          </div>
-        </div>
-
-        {isEditing && (
-          <div>
-            <h3 className="text-md font-medium mb-2">Additional materials</h3>
-            <p className="text-sm text-gray-500 mb-2">
-              Attach a document such as your visual guidelines or brand style guide
-            </p>
-            <div 
-              className="border-2 border-dashed border-gray-300 rounded-md p-6 text-center hover:border-gray-400 transition-colors cursor-pointer"
-              onDragOver={(e) => e.preventDefault()}
-              onDrop={handleFileDrop}
-              onClick={handleFileAreaClick}
-            >
-              <Upload className="h-8 w-8 mx-auto mb-2 text-gray-400" />
-              <p className="text-sm text-gray-500">Drag & drop files here, or click to select files</p>
-              <input 
-                ref={fileInputRef}
-                type="file" 
-                className="hidden"
-                onChange={handleFileChange}
-              />
-            </div>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </div>
   );
 };

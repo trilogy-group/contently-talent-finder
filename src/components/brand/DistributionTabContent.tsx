@@ -5,6 +5,8 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Eye, Pencil } from "lucide-react";
+import { contentStrategyApi } from "@/utils/api";
+import { showToastAlert } from "@/components/ui/toast-alert";
 
 // Define the Channel type
 type ChannelStatus = "cannot_use" | "currently_using" | "interested" | "not_interested";
@@ -18,31 +20,40 @@ interface Channel {
 interface DistributionTabContentProps {
   channels: Channel[];
   setChannels: (channels: Channel[]) => void;
-  isEditing?: boolean;
+  isEditing: boolean;
+  isLoading?: boolean;
 }
 
-export const DistributionTabContent = ({
+export const DistributionTabContent: React.FC<DistributionTabContentProps> = ({
   channels,
   setChannels,
-  isEditing: externalIsEditing,
-}: DistributionTabContentProps) => {
-  const [isEditing, setIsEditing] = useState(externalIsEditing || false);
-
-  // Update internal state when external state changes
+  isEditing,
+  isLoading = false
+}) => {
+  // Save changes when editing is toggled off
   useEffect(() => {
-    setIsEditing(externalIsEditing || false);
-  }, [externalIsEditing]);
+    if (!isEditing) {
+      handleSave();
+    }
+  }, [isEditing]);
 
-  const updateChannelStatus = (channelId: string, status: ChannelStatus) => {
-    setChannels(
-      channels.map((channel) =>
-        channel.id === channelId ? { ...channel, status } : channel
-      )
-    );
+  const handleSave = async () => {
+    try {
+      await contentStrategyApi.updateDistribution({
+        channels: channels
+      });
+      showToastAlert('Distribution channels updated successfully!', 'success');
+    } catch (error) {
+      console.error('Error updating distribution channels:', error);
+      showToastAlert('Error updating distribution channels. Please try again.', 'error');
+    }
   };
 
-  const toggleEditMode = () => {
-    setIsEditing(!isEditing);
+  const handleStatusChange = (channelId: string, newStatus: ChannelStatus) => {
+    const updatedChannels = channels.map(channel =>
+      channel.id === channelId ? { ...channel, status: newStatus } : channel
+    );
+    setChannels(updatedChannels);
   };
 
   // Group channels by background color for zebra striping
@@ -61,7 +72,7 @@ export const DistributionTabContent = ({
         <div className="flex justify-center items-center">
           <RadioGroup
             value={channel.status}
-            onValueChange={(value) => updateChannelStatus(channel.id, value as ChannelStatus)}
+            onValueChange={(value) => handleStatusChange(channel.id, value as ChannelStatus)}
             className="flex items-center"
             disabled={!isEditing}
           >
@@ -78,7 +89,7 @@ export const DistributionTabContent = ({
         <div className="flex justify-center items-center">
           <RadioGroup
             value={channel.status}
-            onValueChange={(value) => updateChannelStatus(channel.id, value as ChannelStatus)}
+            onValueChange={(value) => handleStatusChange(channel.id, value as ChannelStatus)}
             className="flex items-center"
             disabled={!isEditing}
           >
@@ -95,7 +106,7 @@ export const DistributionTabContent = ({
         <div className="flex justify-center items-center">
           <RadioGroup
             value={channel.status}
-            onValueChange={(value) => updateChannelStatus(channel.id, value as ChannelStatus)}
+            onValueChange={(value) => handleStatusChange(channel.id, value as ChannelStatus)}
             className="flex items-center"
             disabled={!isEditing}
           >
@@ -112,7 +123,7 @@ export const DistributionTabContent = ({
         <div className="flex justify-center items-center">
           <RadioGroup
             value={channel.status}
-            onValueChange={(value) => updateChannelStatus(channel.id, value as ChannelStatus)}
+            onValueChange={(value) => handleStatusChange(channel.id, value as ChannelStatus)}
             className="flex items-center"
             disabled={!isEditing}
           >
@@ -131,37 +142,52 @@ export const DistributionTabContent = ({
 
   return (
     <div className="space-y-6">
-      <Card className="overflow-hidden rounded-xl shadow-sm border border-gray-200">
+      <Card>
         <CardContent className="p-0">
-          {/* Hidden button for toggling edit mode */}
-          <button 
-            className="hidden toggle-distribution-edit" 
-            onClick={toggleEditMode}
-          ></button>
+          {isLoading ? (
+            <div className="p-6 space-y-4">
+              <div className="h-8 bg-gray-200 animate-pulse rounded w-1/4" />
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="h-12 bg-gray-200 animate-pulse rounded" />
+              ))}
+            </div>
+          ) : (
+            <div className="space-y-6">
+              <Card className="overflow-hidden rounded-xl shadow-sm border border-gray-200">
+                <CardContent className="p-0">
+                  {/* Hidden button for toggling edit mode */}
+                  <button 
+                    className="hidden toggle-distribution-edit" 
+                    onClick={handleSave}
+                  ></button>
 
-          <div className="flex justify-between items-center p-4 bg-blue-50 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-800">Distribution Channels</h2>
-          </div>
+                  <div className="flex justify-between items-center p-4 bg-blue-50 border-b border-gray-200">
+                    <h2 className="text-lg font-semibold text-gray-800">Distribution Channels</h2>
+                  </div>
 
-          <div className="grid grid-cols-5 py-4 bg-white border-b border-gray-200">
-            <div className="pl-4 font-semibold text-gray-700">
-              CHANNELS
+                  <div className="grid grid-cols-5 py-4 bg-white border-b border-gray-200">
+                    <div className="pl-4 font-semibold text-gray-700">
+                      CHANNELS
+                    </div>
+                    <div className="text-center font-semibold text-gray-700">
+                      CANNOT USE
+                    </div>
+                    <div className="text-center font-semibold text-gray-700">
+                      CURRENTLY<br />USING
+                    </div>
+                    <div className="text-center font-semibold text-gray-700">
+                      INTERESTED IN<br />USING
+                    </div>
+                    <div className="text-center font-semibold text-gray-700">
+                      NOT INTERESTED<br />IN USING
+                    </div>
+                  </div>
+                  
+                  {channels.map((channel, index) => renderChannel(channel, index))}
+                </CardContent>
+              </Card>
             </div>
-            <div className="text-center font-semibold text-gray-700">
-              CANNOT USE
-            </div>
-            <div className="text-center font-semibold text-gray-700">
-              CURRENTLY<br />USING
-            </div>
-            <div className="text-center font-semibold text-gray-700">
-              INTERESTED IN<br />USING
-            </div>
-            <div className="text-center font-semibold text-gray-700">
-              NOT INTERESTED<br />IN USING
-            </div>
-          </div>
-          
-          {channels.map((channel, index) => renderChannel(channel, index))}
+          )}
         </CardContent>
       </Card>
     </div>

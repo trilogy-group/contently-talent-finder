@@ -13,6 +13,8 @@ import { SeoKeywordsTabContent } from "@/components/brand/SeoKeywordsTabContent"
 import { DefaultTabContent } from "@/components/brand/DefaultTabContent";
 import { Button } from "@/components/ui/button";
 import { showToastAlert } from "@/components/ui/toast-alert";
+import { contentStrategyApi } from '@/utils/api';
+import { ContentPlan, ContentPillar } from "@/types/content";
 
 // Define the Audience type
 interface Audience {
@@ -26,15 +28,6 @@ interface Audience {
   attachments?: string[];
 }
 
-// Define the ContentPillar type
-interface ContentPillar {
-  id: string;
-  name: string;
-  description: string;
-  headlines: string;
-  keywords: string[];
-}
-
 // Define ContentFormat type
 type ContentFormat = {
   id: string;
@@ -43,13 +36,6 @@ type ContentFormat = {
   quantity: number;
   frequency: string;
   price: number;
-};
-
-// Define ContentPlan type
-type ContentPlan = {
-  id: string;
-  name: string;
-  contentFormats: ContentFormat[];
 };
 
 // Define Channel type
@@ -79,105 +65,63 @@ const BrandCompass = () => {
   const [activeTab, setActiveTab] = useState("goals");
   const [isEditing, setIsEditing] = useState(false);
   const [selectedStrategy, setSelectedStrategy] = useState<string>("all");
+  const [contentPlan, setContentPlan] = useState<ContentPlan | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Load selected strategy from localStorage
   useEffect(() => {
-    const savedSelectedStrategy = localStorage.getItem('selectedContentStrategy');
-    if (savedSelectedStrategy) {
-      // Just set the strategy without loading data
-      setSelectedStrategy(savedSelectedStrategy);
-      
-      // Try to load data for this strategy
-      const loadInitialData = async () => {
-        try {
-          const strategiesDataStr = localStorage.getItem('brandCompassStrategiesData');
-          if (strategiesDataStr) {
-            const strategiesData = JSON.parse(strategiesDataStr);
-            if (strategiesData[savedSelectedStrategy]) {
-              const data = strategiesData[savedSelectedStrategy];
-              
-              // Update all state with the loaded data
-              setPrimaryGoal(data.primaryGoal || "brand_awareness");
-              setOrgType(data.orgType || "b2c");
-              setContentMission(data.contentMission || "");
-              setNeedsRecommendations(data.needsRecommendations || false);
-              setSelectedKpis(data.selectedKpis || []);
-              setAudiences(data.audiences || []);
-              setVoiceDescription(data.voiceDescription || "");
-              setBlockedWords(data.blockedWords || "");
-              setStyleGuide(data.styleGuide || "");
-              setUseFirstPerson(data.useFirstPerson || false);
-              setNotes(data.notes || "");
-              setPillars(data.pillars || []);
-              setContentPlans(data.contentPlans || []);
-              setDistributionChannels(data.distributionChannels || []);
-              setSeoKeywords(data.seoKeywords || []);
-            }
-          }
-        } catch (error) {
-          console.error('Error loading initial data:', error);
-        }
-      };
-      
-      loadInitialData();
-    }
-  }, []);
+    const loadInitialData = async () => {
+      setIsLoading(true);
+      try {
+        // Load data from all endpoints in parallel
+        const [
+          missionAndGoals,
+          audiences,
+          voiceAndStyle,
+          pillars,
+          contentPlan,
+          distribution,
+          seoKeywords
+        ] = await Promise.all([
+          contentStrategyApi.getMissionAndGoals(),
+          contentStrategyApi.getAudiences(),
+          contentStrategyApi.getVoiceAndStyle(),
+          contentStrategyApi.getPillars(),
+          contentStrategyApi.getPlan(),
+          contentStrategyApi.getDistribution(),
+          contentStrategyApi.getSeoKeywords()
+        ]);
 
-  // Function to handle strategy change
-  const handleStrategyChange = (strategy: string) => {
-    // Only load data if the strategy is different
-    if (strategy !== selectedStrategy) {
-      setSelectedStrategy(strategy);
-      
-      // Save to localStorage
-      localStorage.setItem('selectedContentStrategy', strategy);
-      
-      // If "all" is selected, don't load specific strategy data
-      if (strategy === "all") {
-        return;
+        // Update state with fetched data
+        setPrimaryGoal(missionAndGoals.primaryGoal || "brand_awareness");
+        setOrgType(missionAndGoals.orgType || "b2c");
+        setContentMission(missionAndGoals.contentMission || "");
+        setNeedsRecommendations(missionAndGoals.needsRecommendations || false);
+        setSelectedKpis(missionAndGoals.selectedKpis || []);
+        
+        setAudiences(audiences || []);
+        
+        setVoiceDescription(voiceAndStyle.voiceDescription || "");
+        setBlockedWords(voiceAndStyle.blockedWords || "");
+        setStyleGuide(voiceAndStyle.styleGuide || "");
+        setUseFirstPerson(voiceAndStyle.useFirstPerson || false);
+        setNotes(voiceAndStyle.notes || "");
+        
+        setPillars(pillars || []);
+        setDistributionChannels(distribution.channels || []);
+        setSeoKeywords(seoKeywords || []);
+        setContentPlan(contentPlan);
+
+      } catch (error) {
+        console.error('Error loading initial data:', error);
+        showToastAlert('Error loading data. Please try again.', 'error');
+      } finally {
+        setIsLoading(false);
       }
-      
-      // Load data for the selected strategy
-      const loadData = async () => {
-        try {
-          // Get strategies data
-          const strategiesDataStr = localStorage.getItem('brandCompassStrategiesData');
-          
-          if (!strategiesDataStr) {
-            return;
-          }
-          
-          const strategiesData = JSON.parse(strategiesDataStr);
-          const data = strategiesData[strategy];
-          
-          if (!data) {
-            return;
-          }
-          
-          // Update all state with the loaded data
-          setPrimaryGoal(data.primaryGoal || "brand_awareness");
-          setOrgType(data.orgType || "b2c");
-          setContentMission(data.contentMission || "");
-          setNeedsRecommendations(data.needsRecommendations || false);
-          setSelectedKpis(data.selectedKpis || []);
-          setAudiences(data.audiences || []);
-          setVoiceDescription(data.voiceDescription || "");
-          setBlockedWords(data.blockedWords || "");
-          setStyleGuide(data.styleGuide || "");
-          setUseFirstPerson(data.useFirstPerson || false);
-          setNotes(data.notes || "");
-          setPillars(data.pillars || []);
-          setContentPlans(data.contentPlans || []);
-          setDistributionChannels(data.distributionChannels || []);
-          setSeoKeywords(data.seoKeywords || []);
-        } catch (error) {
-          console.error('Error loading data for strategy:', error);
-        }
-      };
-      
-      loadData();
-    }
-  };
+    };
+
+    loadInitialData();
+  }, []);
 
   // State for tracking if distribution is in edit mode
   const [isDistributionEditing, setIsDistributionEditing] = useState(false);
@@ -192,97 +136,57 @@ const BrandCompass = () => {
   };
 
   // Function to save data to database
-  const saveToDatabase = () => {
-    if (!selectedStrategy) {
-      showToastAlert('Please select a strategy first.', 'warning');
-      return;
-    }
-
-    // Create a data object with all the state
-    const data = {
-      primaryGoal,
-      orgType,
-      contentMission,
-      needsRecommendations,
-      selectedKpis,
-      audiences,
-      voiceDescription,
-      blockedWords,
-      styleGuide,
-      useFirstPerson,
-      notes,
-      pillars,
-      contentPlans,
-      distributionChannels,
-      seoKeywords
-    };
-    
+  const saveToDatabase = async () => {
     try {
-      // Get existing strategies data or initialize empty object
-      const existingDataStr = localStorage.getItem('brandCompassStrategiesData');
-      const existingData = existingDataStr ? JSON.parse(existingDataStr) : {};
+      // Get the original keywords from the API to compare
+      const originalKeywords = await contentStrategyApi.getSeoKeywords();
       
-      // Update the data for the selected strategy
-      existingData[selectedStrategy] = data;
-      
-      // Save back to localStorage
-      localStorage.setItem('brandCompassStrategiesData', JSON.stringify(existingData));
-      
-      // Also save to the old key for backward compatibility
-      localStorage.setItem('brandCompassData', JSON.stringify(data));
-      
-      showToastAlert(`Strategy "${selectedStrategy}" saved successfully!`, 'success');
+      // Find keywords to delete (exist in original but not in current state)
+      const keywordsToDelete = originalKeywords.filter(
+        origKeyword => !seoKeywords.some(
+          currKeyword => currKeyword.id === origKeyword.id
+        )
+      );
+
+      // Find keywords to create (exist in current state but not in original)
+      const keywordsToCreate = seoKeywords.filter(
+        currKeyword => !originalKeywords.some(
+          origKeyword => origKeyword.id === currKeyword.id
+        )
+      );
+
+      // Save data to all endpoints in parallel
+      await Promise.all([
+        contentStrategyApi.updateMissionAndGoals({
+          primaryGoal,
+          orgType,
+          contentMission,
+          needsRecommendations,
+          selectedKpis
+        }),
+        contentStrategyApi.updateVoiceAndStyle({
+          voiceDescription,
+          blockedWords,
+          styleGuide,
+          useFirstPerson,
+          notes
+        }),
+        ...pillars.map(pillar => contentStrategyApi.updatePillar(pillar.id, pillar)),
+        contentStrategyApi.updatePlan(contentPlan),
+        contentStrategyApi.updateDistribution({ channels: distributionChannels }),
+        // Handle SEO keywords separately
+        ...keywordsToDelete.map(keyword => 
+          contentStrategyApi.deleteSeoKeyword(keyword.id)
+        ),
+        ...keywordsToCreate.map(keyword => 
+          contentStrategyApi.createSeoKeyword(keyword)
+        )
+      ]);
+
+      showToastAlert('Strategy saved successfully!', 'success');
     } catch (error) {
       console.error('Error saving data:', error);
       showToastAlert('Error saving data. Please try again.', 'error');
-    }
-  };
-  
-  // Function to load data from database
-  const loadFromDatabase = () => {
-    if (!selectedStrategy) {
-      showToastAlert('Please select a strategy first.', 'warning');
-      return;
-    }
-    
-    try {
-      // Get strategies data
-      const strategiesDataStr = localStorage.getItem('brandCompassStrategiesData');
-      
-      if (!strategiesDataStr) {
-        showToastAlert('No saved strategies found.', 'warning');
-        return;
-      }
-      
-      const strategiesData = JSON.parse(strategiesDataStr);
-      const data = strategiesData[selectedStrategy];
-      
-      if (!data) {
-        showToastAlert(`No data found for strategy "${selectedStrategy}".`, 'warning');
-        return;
-      }
-      
-      // Update all state with the loaded data
-      setPrimaryGoal(data.primaryGoal || "brand_awareness");
-      setOrgType(data.orgType || "b2c");
-      setContentMission(data.contentMission || "");
-      setNeedsRecommendations(data.needsRecommendations || false);
-      setSelectedKpis(data.selectedKpis || []);
-      setAudiences(data.audiences || []);
-      setVoiceDescription(data.voiceDescription || "");
-      setBlockedWords(data.blockedWords || "");
-      setStyleGuide(data.styleGuide || "");
-      setUseFirstPerson(data.useFirstPerson || false);
-      setNotes(data.notes || "");
-      setPillars(data.pillars || []);
-      setContentPlans(data.contentPlans || []);
-      setDistributionChannels(data.distributionChannels || []);
-      setSeoKeywords(data.seoKeywords || []);
-      
-      showToastAlert(`Strategy "${selectedStrategy}" loaded successfully!`, 'success');
-    } catch (error) {
-      console.error('Error loading data:', error);
-      showToastAlert('Error loading data. Please try again.', 'error');
     }
   };
 
@@ -351,92 +255,6 @@ const BrandCompass = () => {
       description: "Latest trends and developments in the field of digital marketing.",
       headlines: "Emerging Social Media Platforms to Watch\nAI in Marketing: Current Applications and Future Potential\nThe Rise of Voice Search",
       keywords: ["digital marketing", "marketing trends", "AI marketing", "voice search"]
-    }
-  ]);
-
-  // Content Plan tab state
-  const [contentPlans, setContentPlans] = useState<ContentPlan[]>([
-    {
-      id: "1",
-      name: "Energy",
-      contentFormats: [
-        {
-          id: "1-1",
-          format: "Article / blog post",
-          subFormat: "Reported article",
-          quantity: 11,
-          frequency: "Monthly",
-          price: 675
-        },
-        {
-          id: "1-2",
-          format: "eBook",
-          subFormat: "",
-          quantity: 1,
-          frequency: "Quarterly",
-          price: 1200
-        },
-        {
-          id: "1-3",
-          format: "Presentation / brochure",
-          subFormat: "Data-driven",
-          quantity: 2,
-          frequency: "Yearly",
-          price: 1300
-        }
-      ]
-    },
-    {
-      id: "2",
-      name: "Health & wellness",
-      contentFormats: [
-        {
-          id: "2-1",
-          format: "Article / blog post",
-          subFormat: "",
-          quantity: 12,
-          frequency: "Yearly",
-          price: 300
-        },
-        {
-          id: "2-2",
-          format: "Article / blog post",
-          subFormat: "",
-          quantity: 14,
-          frequency: "Yearly",
-          price: 500
-        },
-        {
-          id: "2-3",
-          format: "Article / blog post",
-          subFormat: "",
-          quantity: 14,
-          frequency: "Yearly",
-          price: 500
-        },
-        {
-          id: "2-4",
-          format: "Article / blog post",
-          subFormat: "",
-          quantity: 18,
-          frequency: "Yearly",
-          price: 300
-        }
-      ]
-    },
-    {
-      id: "3",
-      name: "Travel abroad",
-      contentFormats: [
-        {
-          id: "3-1",
-          format: "Original research",
-          subFormat: "",
-          quantity: 12,
-          frequency: "Yearly",
-          price: 32213
-        }
-      ]
     }
   ]);
 
@@ -525,16 +343,16 @@ const BrandCompass = () => {
   };
 
   const kpiOptions = [
-    { id: "total_people", label: "Total people" },
-    { id: "total_attention", label: "Total attention time" },
-    { id: "direct_source", label: "People from source (Direct)" },
-    { id: "social_actions", label: "Total social actions" },
-    { id: "avg_attention", label: "Average attention time per person" },
-    { id: "avg_social", label: "Average number of social actions per story" },
-    { id: "engagement_rate", label: "Engagement rate" },
-    { id: "avg_stories", label: "Average engaged stories per person" },
-    { id: "finish_rate", label: "Finish rate" },
-    { id: "returning_visitors", label: "Returning visitors" }
+    { value: "total_people", label: "Total people" },
+    { value: "total_attention", label: "Total attention time" },
+    { value: "direct_source", label: "People from source (Direct)" },
+    { value: "social_actions", label: "Total social actions" },
+    { value: "avg_attention", label: "Average attention time per person" },
+    { value: "avg_social", label: "Average number of social actions per story" },
+    { value: "engagement_rate", label: "Engagement rate" },
+    { value: "avg_stories", label: "Average engaged stories per person" },
+    { value: "finish_rate", label: "Finish rate" },
+    { value: "returning_visitors", label: "Returning visitors" }
   ];
 
   const toggleKpi = (kpiId: string) => {
@@ -564,6 +382,7 @@ const BrandCompass = () => {
             toggleKpi={toggleKpi}
             kpiOptions={kpiOptions}
             isEditing={isEditing}
+            isLoading={isLoading}
           />
         );
       case "audiences":
@@ -571,6 +390,7 @@ const BrandCompass = () => {
           <AudiencesTabContentV2
             audiences={audiences}
             setAudiences={setAudiences}
+            isLoading={isLoading}
           />
         );
       case "voice":
@@ -587,6 +407,7 @@ const BrandCompass = () => {
             notes={notes}
             setNotes={setNotes}
             isEditing={isEditing}
+            isLoading={isLoading}
           />
         );
       case "pillars":
@@ -595,13 +416,15 @@ const BrandCompass = () => {
             pillars={pillars}
             setPillars={setPillars}
             seoKeywords={seoKeywords}
+            isLoading={isLoading}
           />
         );
       case "plan":
         return (
           <ContentPlanTabContent
-            contentPlans={contentPlans}
-            setContentPlans={setContentPlans}
+            contentPlan={contentPlan}
+            setContentPlan={setContentPlan}
+            isLoading={isLoading}
           />
         );
       case "distribution":
@@ -610,6 +433,7 @@ const BrandCompass = () => {
             channels={distributionChannels}
             setChannels={setDistributionChannels}
             isEditing={isDistributionEditing}
+            isLoading={isLoading}
           />
         );
       case "seo":
@@ -617,6 +441,7 @@ const BrandCompass = () => {
           <SeoKeywordsTabContent
             keywords={seoKeywords}
             setKeywords={setSeoKeywords}
+            isLoading={isLoading}
           />
         );
       default:
@@ -656,9 +481,12 @@ const BrandCompass = () => {
   };
 
   // Total quarterly spend across all plans
-  const totalQuarterlySpend = contentPlans.reduce((total, plan) => {
-    return total + calculateQuarterlySpend(plan.contentFormats);
-  }, 0);
+  const totalQuarterlySpend = contentPlan ? calculateQuarterlySpend(contentPlan.contentFormats) : 0;
+
+  // Add the handler function
+  const handleStrategyChange = (strategy: string) => {
+    setSelectedStrategy(strategy);
+  };
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -667,7 +495,6 @@ const BrandCompass = () => {
         totalAmount={activeTab === "plan" ? formatCurrency(totalQuarterlySpend) : undefined}
         showTotal={activeTab === "plan"}
         onSaveToDatabase={saveToDatabase}
-        onLoadFromDatabase={loadFromDatabase}
       />
       <div className="flex h-[calc(100vh-64px)]">
         <StrategySidebar
