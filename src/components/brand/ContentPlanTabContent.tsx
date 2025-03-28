@@ -14,37 +14,23 @@ import { X, Plus, FileText, BookOpen, PresentationIcon, Search, PenLine, Trash2 
 import { Separator } from "@/components/ui/separator";
 import { showToastAlert } from "@/components/ui/toast-alert";
 import { useConfirmDialog } from "@/components/ui/confirm-dialog";
-
-// Define content format types
-type ContentFormat = {
-  id: string;
-  format: string;
-  subFormat: string;
-  quantity: number;
-  frequency: string;
-  price: number;
-};
-
-// Define content plan type
-type ContentPlan = {
-  id: string;
-  name: string;
-  contentFormats: ContentFormat[];
-};
+import { contentStrategyApi } from "@/utils/api";
+import { ContentPlan, ContentFormat } from "@/types/content";
 
 interface ContentPlanTabContentProps {
-  contentPlans: ContentPlan[];
-  setContentPlans: (plans: ContentPlan[]) => void;
+  contentPlan: ContentPlan | null;
+  setContentPlan: (plan: ContentPlan | null) => void;
+  isLoading?: boolean;
 }
 
-export const ContentPlanTabContent = ({
-  contentPlans,
-  setContentPlans,
-}: ContentPlanTabContentProps) => {
-  const [isCreatingPlan, setIsCreatingPlan] = useState(false);
-  const [isEditingPlan, setIsEditingPlan] = useState<string | null>(null);
-  const [planName, setPlanName] = useState("");
+export const ContentPlanTabContent: React.FC<ContentPlanTabContentProps> = ({
+  contentPlan,
+  setContentPlan,
+  isLoading = false
+}) => {
+  const [isEditing, setIsEditing] = useState(false);
   const [editingFormats, setEditingFormats] = useState<ContentFormat[]>([]);
+  const [planName, setPlanName] = useState("");
   const { showConfirm, confirmDialog } = useConfirmDialog();
 
   // Get format icon based on content type
@@ -108,7 +94,67 @@ export const ContentPlanTabContent = ({
     }
   };
 
-  // Create a new content format
+  // Start editing the plan
+  const startEditing = () => {
+    if (contentPlan) {
+      setPlanName(contentPlan.name);
+      setEditingFormats([...contentPlan.contentFormats]);
+    } else {
+      setPlanName("");
+      setEditingFormats([]);
+    }
+    setIsEditing(true);
+  };
+
+  // Save the plan
+  const savePlan = async () => {
+    if (!planName.trim()) {
+      showToastAlert("Please enter a plan name", "error");
+      return;
+    }
+
+    if (editingFormats.length === 0) {
+      showToastAlert("Please add at least one content format", "warning");
+      return;
+    }
+
+    try {
+      const updatedPlan: ContentPlan = {
+        id: contentPlan?.id || Date.now().toString(),
+        name: planName,
+        contentFormats: editingFormats,
+      };
+
+      await contentStrategyApi.updatePlan(updatedPlan);
+      setContentPlan(updatedPlan);
+      setIsEditing(false);
+      showToastAlert('Content plan updated successfully!', 'success');
+    } catch (error) {
+      console.error('Error saving content plan:', error);
+      showToastAlert('Error saving content plan. Please try again.', 'error');
+    }
+  };
+
+  // Cancel editing
+  const cancelEditing = () => {
+    setIsEditing(false);
+    if (contentPlan) {
+      setPlanName(contentPlan.name);
+      setEditingFormats([...contentPlan.contentFormats]);
+    } else {
+      setPlanName("");
+      setEditingFormats([]);
+    }
+  };
+
+  // Update a content format field
+  const updateContentFormat = (id: string, field: keyof ContentFormat, value: any) => {
+    setEditingFormats(editingFormats.map(format => 
+      format.id === id ? { ...format, [field]: value } : format
+    ));
+  };
+
+  // Add a new content format
   const addContentFormat = () => {
     const newFormat: ContentFormat = {
       id: Date.now().toString(),
@@ -124,93 +170,6 @@ export const ContentPlanTabContent = ({
   // Remove a content format
   const removeContentFormat = (id: string) => {
     setEditingFormats(editingFormats.filter(format => format.id !== id));
-  };
-
-  // Update a content format field
-  const updateContentFormat = (id: string, field: keyof ContentFormat, value: any) => {
-    setEditingFormats(editingFormats.map(format => 
-      format.id === id ? { ...format, [field]: value } : format
-    ));
-  };
-
-  // Start creating a new plan
-  const startNewPlan = () => {
-    setPlanName("");
-    setEditingFormats([]);
-    setIsCreatingPlan(true);
-    setIsEditingPlan(null);
-  };
-
-  // Start editing an existing plan
-  const editPlan = (planId: string) => {
-    const plan = contentPlans.find(p => p.id === planId);
-    if (plan) {
-      setPlanName(plan.name);
-      setEditingFormats([...plan.contentFormats]);
-      setIsCreatingPlan(true);
-      setIsEditingPlan(planId);
-    }
-  };
-
-  // Save the current plan
-  const savePlan = () => {
-    if (!planName.trim()) {
-      showToastAlert("Please enter a plan name", "error");
-      return;
-    }
-
-    if (editingFormats.length === 0) {
-      showToastAlert("Please add at least one content format", "warning");
-      return;
-    }
-
-    if (isEditingPlan) {
-      // Update existing plan
-      setContentPlans(contentPlans.map(plan => 
-        plan.id === isEditingPlan 
-          ? { ...plan, name: planName, contentFormats: editingFormats }
-          : plan
-      ));
-    } else {
-      // Create new plan
-      const newPlan: ContentPlan = {
-        id: Date.now().toString(),
-        name: planName,
-        contentFormats: editingFormats,
-      };
-      setContentPlans([...contentPlans, newPlan]);
-    }
-
-    // Reset form
-    setIsCreatingPlan(false);
-    setIsEditingPlan(null);
-    setPlanName("");
-    setEditingFormats([]);
-  };
-
-  // Cancel editing
-  const cancelEditing = () => {
-    setIsCreatingPlan(false);
-    setIsEditingPlan(null);
-    setPlanName("");
-    setEditingFormats([]);
-  };
-
-  // Delete a plan
-  const deletePlan = (planId: string) => {
-    showConfirm(
-      () => {
-        setContentPlans(contentPlans.filter(plan => plan.id !== planId));
-        showToastAlert("Plan deleted successfully", "success");
-      },
-      {
-        title: "Delete Plan",
-        message: "Are you sure you want to delete this plan? This action cannot be undone.",
-        confirmText: "Delete",
-        cancelText: "Cancel",
-        type: "danger"
-      }
-    );
   };
 
   // Format options
@@ -245,236 +204,75 @@ export const ContentPlanTabContent = ({
   const frequencyOptions = ["Monthly", "Quarterly", "Yearly"];
 
   // Total quarterly spend across all plans
-  const totalQuarterlySpend = contentPlans.reduce((total, plan) => {
-    return total + calculateQuarterlySpend(plan.contentFormats);
-  }, 0);
+  const totalQuarterlySpend = contentPlan ? calculateQuarterlySpend(contentPlan.contentFormats) : 0;
 
   return (
-    <div>
-      {confirmDialog}
-      <div className="space-y-6">
-        {isCreatingPlan ? (
-          // Plan editor
-          <Card className="bg-white shadow border border-gray-200">
-            <CardContent className="p-6 space-y-6">
-              <div className="space-y-4">
-                <h2 className="text-2xl font-semibold text-orange-400">
-                  {isEditingPlan ? "Edit plan" : "Create content plan"}
-                </h2>
-                
-                <div>
-                  <Label htmlFor="plan-name" className="text-sm font-medium text-gray-700">
-                    Plan Name
-                  </Label>
-                  <Input
-                    id="plan-name"
-                    value={planName}
-                    onChange={(e) => setPlanName(e.target.value)}
-                    placeholder="e.g. Energy, Health & wellness, Travel abroad"
-                    className="mt-1"
-                  />
-                </div>
-
-                <div className="space-y-6">
-                  <h3 className="text-lg font-medium text-gray-800">Story formats</h3>
-                  
-                  {editingFormats.map((format, index) => (
-                    <div 
-                      key={format.id} 
-                      className="border border-gray-200 rounded-lg p-5 bg-gray-50 relative"
-                    >
-                      <button
-                        onClick={() => removeContentFormat(format.id)}
-                        className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
-                        aria-label="Remove format"
-                      >
-                        <X className="h-5 w-5" />
-                      </button>
-
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                        <div>
-                          <Label className="text-sm font-medium text-gray-700 mb-1 block">
-                            FORMAT <span className="text-red-500">*</span>
-                          </Label>
-                          <Select
-                            value={format.format}
-                            onValueChange={(value) => updateContentFormat(format.id, "format", value)}
-                          >
-                            <SelectTrigger className="w-full">
-                              <SelectValue placeholder="Select format" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {formatOptions.map((option) => (
-                                <SelectItem key={option} value={option}>
-                                  {option}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-
-                        <div>
-                          <Label className="text-sm font-medium text-gray-700 mb-1 block">
-                            SUBFORMAT
-                          </Label>
-                          <Select
-                            value={format.subFormat}
-                            onValueChange={(value) => updateContentFormat(format.id, "subFormat", value)}
-                            disabled={getSubFormatOptions(format.format).length === 0}
-                          >
-                            <SelectTrigger className="w-full">
-                              <SelectValue placeholder="Select a sub-format" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {getSubFormatOptions(format.format).map((option) => (
-                                <SelectItem key={option} value={option}>
-                                  {option}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div>
-                          <Label className="text-sm font-medium text-gray-700 mb-1 block">
-                            NUMBER OF STORIES <span className="text-red-500">*</span>
-                          </Label>
-                          <Input
-                            type="number"
-                            value={format.quantity}
-                            onChange={(e) => updateContentFormat(format.id, "quantity", parseInt(e.target.value) || 0)}
-                            min={1}
-                          />
-                        </div>
-
-                        <div>
-                          <Label className="text-sm font-medium text-gray-700 mb-1 block">
-                            FREQUENCY <span className="text-red-500">*</span>
-                          </Label>
-                          <Select
-                            value={format.frequency}
-                            onValueChange={(value) => updateContentFormat(format.id, "frequency", value)}
-                          >
-                            <SelectTrigger className="w-full">
-                              <SelectValue placeholder="Select frequency" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {frequencyOptions.map((option) => (
-                                <SelectItem key={option} value={option}>
-                                  {option}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-
-                        <div>
-                          <Label className="text-sm font-medium text-gray-700 mb-1 block">
-                            YOU PAY <span className="text-red-500">*</span>
-                          </Label>
-                          <div className="relative">
-                            <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">$</span>
-                            <Input
-                              type="number"
-                              value={format.price}
-                              onChange={(e) => updateContentFormat(format.id, "price", parseInt(e.target.value) || 0)}
-                              className="pl-8"
-                              min={0}
-                            />
-                          </div>
-                          <p className="text-xs text-blue-500 mt-1">
-                            <a href="#" className="flex items-center hover:underline">
-                              See the Content Menu
-                              <svg className="w-3 h-3 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
-                              </svg>
-                            </a>
-                          </p>
-                        </div>
-                      </div>
-                    </div>
+    <div className="space-y-6">
+      <div className="max-w-5xl mx-auto">
+        <Card>
+          <CardContent className="p-6">
+            {isLoading ? (
+              <div className="space-y-6">
+                <div className="h-8 bg-gray-200 animate-pulse rounded w-1/3" />
+                <div className="space-y-4">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="h-12 bg-gray-200 animate-pulse rounded" />
                   ))}
-
-                  <Button
-                    variant="outline"
-                    onClick={addContentFormat}
-                    className="w-full py-6 border-dashed border-2 text-gray-500 hover:text-gray-700 hover:border-gray-400"
-                  >
-                    <Plus className="h-5 w-5 mr-2" />
-                    ADD FORMAT
-                  </Button>
                 </div>
-
-                <div className="flex justify-end gap-3 pt-4">
-                  <Button variant="outline" onClick={cancelEditing}>
-                    Cancel
-                  </Button>
-                  <Button 
-                    onClick={savePlan}
-                  >
-                    Save
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ) : (
-          // Content plans list view
-          <div className="space-y-6">
-            {/* Hidden button that can be triggered from the main page */}
-            <Button 
-              className="hidden add-plan-button" 
-              onClick={() => startNewPlan()}
-            >
-              Add Plan
-            </Button>
-
-            {contentPlans.length === 0 ? (
-              <div className="bg-gray-50 border border-gray-200 rounded-lg p-8 text-center">
-                <h3 className="text-lg font-medium text-gray-700 mb-2">No content plans defined yet</h3>
-                <p className="text-gray-500 mb-4">
-                  Create your first content plan to organize your content strategy
-                </p>
-                <Button 
-                  onClick={startNewPlan}
-                  className="bg-blue-600 hover:bg-blue-700 text-white"
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Create Your First Plan
-                </Button>
               </div>
             ) : (
-              <div className="bg-white rounded-lg shadow">
-                {contentPlans.map((plan, planIndex) => (
-                  <div key={plan.id}>
-                    {planIndex > 0 && <Separator />}
-                    <div className="p-6">
-                      <div className="flex justify-between items-center mb-4">
-                        <h3 className="text-xl font-medium">{plan.name}</h3>
-                        <div className="flex space-x-2">
-                          <Button 
-                            variant="ghost" 
-                            size="icon"
-                            onClick={() => editPlan(plan.id)}
-                            className="rounded-full hover:bg-gray-100"
-                          >
-                            <PenLine className="h-4 w-4" />
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="icon"
-                            onClick={() => deletePlan(plan.id)}
-                            className="rounded-full hover:bg-gray-100 text-red-500"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+              <div>
+                {isEditing ? (
+                  <div className="space-y-6">
+                    {/* Plan name input */}
+                    <div>
+                      <Label className="text-sm font-medium text-gray-700 mb-1 block">
+                        PLAN NAME <span className="text-red-500">*</span>
+                      </Label>
+                      <Input
+                        value={planName}
+                        onChange={(e) => setPlanName(e.target.value)}
+                        placeholder="Enter plan name"
+                      />
+                    </div>
+
+                    {/* Content formats */}
+                    <div className="space-y-6">
+                      {editingFormats.map((format) => (
+                        <div key={format.id} className="space-y-4 p-4 border border-gray-200 rounded-lg">
+                          {/* Format content here */}
+                          {/* ... existing format content ... */}
                         </div>
-                      </div>
-                      
+                      ))}
+
+                      <Button
+                        variant="outline"
+                        onClick={addContentFormat}
+                        className="w-full py-6 border-dashed border-2 text-gray-500 hover:text-gray-700 hover:border-gray-400"
+                      >
+                        <Plus className="h-5 w-5 mr-2" />
+                        ADD FORMAT
+                      </Button>
+                    </div>
+
+                    <div className="flex justify-end gap-3 pt-4">
+                      <Button variant="outline" onClick={cancelEditing}>
+                        Cancel
+                      </Button>
+                      <Button onClick={savePlan}>
+                        Save
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    <h2 className="text-2xl font-semibold text-orange-400">
+                      {contentPlan ? contentPlan.name : "No content plan defined yet"}
+                    </h2>
+                    
+                    {contentPlan ? (
                       <div className="space-y-2">
-                        {plan.contentFormats.map((format) => (
+                        {contentPlan.contentFormats.map((format) => (
                           <div key={format.id} className="flex items-start">
                             <div className="h-6 w-6 mt-1 mr-2">
                               {getFormatIcon(format.format)}
@@ -486,13 +284,25 @@ export const ContentPlanTabContent = ({
                           </div>
                         ))}
                       </div>
-                    </div>
+                    ) : (
+                      <p className="text-gray-500 mb-4">
+                        Create your first content plan to organize your content strategy
+                      </p>
+                    )}
+
+                    <Button 
+                      onClick={startEditing}
+                      className="bg-blue-600 hover:bg-blue-700 text-white"
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      {contentPlan ? "Edit Plan" : "Create Your First Plan"}
+                    </Button>
                   </div>
-                ))}
+                )}
               </div>
             )}
-          </div>
-        )}
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

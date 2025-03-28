@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose, DialogTr
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useConfirmDialog } from "@/components/ui/confirm-dialog";
 import { showToastAlert } from "@/components/ui/toast-alert";
+import { contentStrategyApi } from "@/utils/api";
 
 interface Audience {
   id: string;
@@ -26,9 +27,10 @@ interface Audience {
 interface AudiencesTabContentProps {
   audiences: Audience[];
   setAudiences: React.Dispatch<React.SetStateAction<Audience[]>>;
+  isLoading?: boolean;
 }
 
-export const AudiencesTabContentV2: React.FC<AudiencesTabContentProps> = ({ audiences, setAudiences }) => {
+export const AudiencesTabContentV2: React.FC<AudiencesTabContentProps> = ({ audiences, setAudiences, isLoading = false }) => {
   const [isAddingAudience, setIsAddingAudience] = useState(false);
   const [isEditingAudience, setIsEditingAudience] = useState(false);
   const [currentAudience, setCurrentAudience] = useState<Audience | null>(null);
@@ -62,7 +64,7 @@ export const AudiencesTabContentV2: React.FC<AudiencesTabContentProps> = ({ audi
     setIsAddingAudience(true);
   };
 
-  const handleAddAudience = () => {
+  const handleAddAudience = async () => {
     const newAudience: Audience = {
       id: Date.now().toString(),
       name,
@@ -74,9 +76,15 @@ export const AudiencesTabContentV2: React.FC<AudiencesTabContentProps> = ({ audi
       attachments: attachments
     };
 
-    setAudiences(prevAudiences => [...prevAudiences, newAudience]);
-    setIsAddingAudience(false);
-    resetForm();
+    try {
+      const response = await contentStrategyApi.createAudience(newAudience);
+      setAudiences([...audiences, response]);
+      setIsAddingAudience(false);
+      resetForm();
+    } catch (error) {
+      console.error('Error adding audience:', error);
+      showToastAlert('Error adding audience. Please try again.', 'error');
+    }
   };
 
   const handleEditAudience = () => {
@@ -103,20 +111,15 @@ export const AudiencesTabContentV2: React.FC<AudiencesTabContentProps> = ({ audi
     resetForm();
   };
 
-  const handleDeleteAudience = (id: string) => {
-    showConfirm(
-      () => {
-        setAudiences(prevAudiences => prevAudiences.filter(audience => audience.id !== id));
-        showToastAlert("Audience deleted successfully", "success");
-      },
-      {
-        title: "Delete Audience",
-        message: "Are you sure you want to delete this audience? This action cannot be undone.",
-        confirmText: "Delete",
-        cancelText: "Cancel",
-        type: "danger"
-      }
-    );
+  const handleDeleteAudience = async (id: string) => {
+    try {
+      await contentStrategyApi.deleteAudience(id);
+      setAudiences(audiences.filter(a => a.id !== id));
+      showToastAlert("Audience deleted successfully", "success");
+    } catch (error) {
+      console.error('Error deleting audience:', error);
+      showToastAlert('Error deleting audience. Please try again.', 'error');
+    }
   };
 
   const startEditing = (audience: Audience) => {
@@ -187,45 +190,72 @@ export const AudiencesTabContentV2: React.FC<AudiencesTabContentProps> = ({ audi
     return "Any age";
   };
 
+  const handleUpdateAudience = async (updatedAudience: Audience) => {
+    try {
+      await contentStrategyApi.updateAudience(updatedAudience.id, updatedAudience);
+      setAudiences(audiences.map(a => 
+        a.id === updatedAudience.id ? updatedAudience : a
+      ));
+    } catch (error) {
+      console.error('Error updating audience:', error);
+      showToastAlert('Error updating audience. Please try again.', 'error');
+    }
+  };
+
   return (
     <div>
       {confirmDialog}
       <div className="space-y-6">
-        <div className="flex flex-col space-y-4">
-          {audiences.map(audience => (
-            <Card key={audience.id} className="overflow-hidden w-full">
-              <CardContent className="p-6">
-                <div className="flex justify-between items-start mb-2">
-                  <h3 className="text-xl font-semibold">{audience.name}</h3>
-                  <div className="flex items-center space-x-2">
-                    <Button variant="ghost" size="icon" onClick={() => startEditing(audience)} className="text-amber-500 hover:text-amber-700 hover:bg-amber-50">
-                      <Pencil size={16} />
-                    </Button>
-                    <Button variant="ghost" size="icon" onClick={() => handleDeleteAudience(audience.id)} className="text-red-500 hover:text-red-700 hover:bg-red-50">
-                      <Trash2 size={16} />
-                    </Button>
-                  </div>
-                </div>
-                
-                <p className="text-gray-600 w-full mb-2">{audience.description}</p>
-                
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {audience.educationLevel && (
-                    <Badge variant="outline" className="truncate bg-blue-50 text-blue-700 border-blue-200">{getEducationLabel(audience.educationLevel, true)}</Badge>
-                  )}
-                  {audience.gender && (
-                    <Badge variant="outline" className="capitalize truncate bg-purple-50 text-purple-700 border-purple-200">{audience.gender}</Badge>
-                  )}
-                  <Badge variant="outline" className="truncate bg-green-50 text-green-700 border-green-200">{getAgeRange(audience.minAge, audience.maxAge)}</Badge>
-                  
-                  {audience.attachments && audience.attachments.map((attachment, index) => (
-                    <Badge key={index} variant="secondary" className="truncate max-w-[150px]">{attachment}</Badge>
+        <Card>
+          <CardContent className="p-6">
+            {isLoading ? (
+              <div className="space-y-4">
+                <div className="h-8 bg-gray-200 animate-pulse rounded w-1/3" />
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="h-48 bg-gray-200 animate-pulse rounded" />
                   ))}
                 </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+              </div>
+            ) : (
+              <div className="flex flex-col space-y-4">
+                {audiences.map(audience => (
+                  <Card key={audience.id} className="overflow-hidden w-full">
+                    <CardContent className="p-6">
+                      <div className="flex justify-between items-start mb-2">
+                        <h3 className="text-xl font-semibold">{audience.name}</h3>
+                        <div className="flex items-center space-x-2">
+                          <Button variant="ghost" size="icon" onClick={() => startEditing(audience)} className="text-amber-500 hover:text-amber-700 hover:bg-amber-50">
+                            <Pencil size={16} />
+                          </Button>
+                          <Button variant="ghost" size="icon" onClick={() => handleDeleteAudience(audience.id)} className="text-red-500 hover:text-red-700 hover:bg-red-50">
+                            <Trash2 size={16} />
+                          </Button>
+                        </div>
+                      </div>
+                      
+                      <p className="text-gray-600 w-full mb-2">{audience.description}</p>
+                      
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        {audience.educationLevel && (
+                          <Badge variant="outline" className="truncate bg-blue-50 text-blue-700 border-blue-200">{getEducationLabel(audience.educationLevel, true)}</Badge>
+                        )}
+                        {audience.gender && (
+                          <Badge variant="outline" className="capitalize truncate bg-purple-50 text-purple-700 border-purple-200">{audience.gender}</Badge>
+                        )}
+                        <Badge variant="outline" className="truncate bg-green-50 text-green-700 border-green-200">{getAgeRange(audience.minAge, audience.maxAge)}</Badge>
+                        
+                        {audience.attachments && audience.attachments.map((attachment, index) => (
+                          <Badge key={index} variant="secondary" className="truncate max-w-[150px]">{attachment}</Badge>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
         
         {/* Hidden button that will be triggered by the + button in the parent component */}
         <Button 
