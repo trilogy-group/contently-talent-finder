@@ -18,6 +18,7 @@ import {
   RadioGroupItem
 } from "@/components/ui/radio-group";
 import { FilterOption, TalentData } from "@/types/talent-search";
+import { contentStrategyApi } from '@/utils/api';
 
 interface FilterSidebarProps {
   searchMode: "filters" | "chat";
@@ -47,6 +48,8 @@ interface FilterSidebarProps {
   setHasSearched: (hasSearched: boolean) => void;
   contentExamples: string;
   setContentExamples: (examples: string) => void;
+  selectedPillar: string | null;
+  setSelectedPillar: (pillar: string | null) => void;
 }
 
 interface SearchResponse {
@@ -92,12 +95,15 @@ export const FilterSidebar = ({
   setHasSearched,
   contentExamples,
   setContentExamples,
+  selectedPillar,
+  setSelectedPillar,
 }: FilterSidebarProps) => {
   // Add state for storing fetched options
   const [formatOptions, setFormatOptions] = useState<FilterOption[]>([]);
   const [topicOptions, setTopicOptions] = useState<FilterOption[]>([]);
   const [skillOptions, setSkillOptions] = useState<FilterOption[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [pillarOptions, setPillarOptions] = useState<FilterOption[]>([]);
 
   // Fetch options when component mounts
   useEffect(() => {
@@ -109,6 +115,12 @@ export const FilterSidebar = ({
         setFormatOptions(data.storyFormats);
         setTopicOptions(data.topics);
         setSkillOptions(data.skills);
+
+        const pillars = await contentStrategyApi.getPillars();
+        setPillarOptions(pillars.map(pillar => ({
+          value: pillar.id.toString(),
+          label: pillar.name
+        })));
       } catch (error) {
         console.error('Error fetching options:', error);
       } finally {
@@ -152,27 +164,29 @@ export const FilterSidebar = ({
     setResultCount(value);
   };
 
-  // Update handleSearch function to include content examples
+  // Update handleSearch function to include content examples and pillar_id
   const handleSearch = async () => {
     setIsSearching(true);
     try {
-      // Split and clean content examples
       const exampleUrls = contentExamples
         .split(',')
         .map(url => url.trim())
         .filter(url => url.length > 0);
+
+      const searchParams = {
+        storyFormat: selectedIndustries[0]?.toLowerCase(),
+        topicIds: selectedSpecialties.map(Number),
+        skillIds: selectedSkills.map(Number),
+        contentExamples: exampleUrls,
+        ...(selectedPillar && { pillarId: parseInt(selectedPillar) })
+      };
 
       const response = await fetch('https://a0wtldhbib.execute-api.us-east-1.amazonaws.com/prod/talent/search', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          storyFormat: selectedIndustries[0]?.toLowerCase(),
-          topicIds: selectedSpecialties.map(Number),
-          skillIds: selectedSkills.map(Number),
-          contentExamples: exampleUrls,
-        }),
+        body: JSON.stringify(searchParams),
       });
 
       if (!response.ok) {
@@ -424,6 +438,23 @@ export const FilterSidebar = ({
                     // Only take the last selected value for single select
                     const singleValue = values.length > 0 ? [values[values.length - 1]] : [];
                     setSelectedIndustries(singleValue);
+                  }}
+                  maxItems={1}
+                />
+              </div>
+            </div>
+
+            {/* Pillar dropdown */}
+            <div>
+              <Label className="text-sm font-medium">Pillar</Label>
+              <div className="mt-1">
+                <FilterSelect
+                  value={selectedPillar ? [selectedPillar] : []}
+                  placeholder={isLoading ? "Loading pillars..." : "Select a pillar"}
+                  options={pillarOptions}
+                  onChange={(values) => {
+                    const pillar = values.length > 0 ? values[values.length - 1] : null;
+                    setSelectedPillar(pillar);
                   }}
                   maxItems={1}
                 />

@@ -61,6 +61,9 @@ const TalentSearch = () => {
   // Add state for content examples
   const [contentExamples, setContentExamples] = useState<string>("");
 
+  // Add state for selected pillar
+  const [selectedPillar, setSelectedPillar] = useState<string | null>(null);
+
   // Wrapper functions for state updates
   const updateSelectedIndustries = (industries: string[]) => {
     // Check if industry already exists
@@ -319,6 +322,8 @@ const TalentSearch = () => {
                   setHasSearched={setHasSearched}
                   contentExamples={contentExamples}
                   setContentExamples={setContentExamples}
+                  selectedPillar={selectedPillar}
+                  setSelectedPillar={setSelectedPillar}
                 />
               ) : (
                 <ChatSidebar

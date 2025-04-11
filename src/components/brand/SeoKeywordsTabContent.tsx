@@ -10,16 +10,22 @@ import { useConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Upload, Download } from "lucide-react";
+import { contentStrategyApi } from "@/utils/api";
+
+// Define the type for new keywords (without id)
+type NewSeoKeyword = Omit<SeoKeyword, 'id'>;
 
 interface SeoKeywordsTabContentProps {
   keywords: SeoKeyword[];
   setKeywords: (keywords: SeoKeyword[]) => void;
+  isLoading?: boolean;
 }
 
-export const SeoKeywordsTabContent = ({
+export const SeoKeywordsTabContent: React.FC<SeoKeywordsTabContentProps> = ({
   keywords,
   setKeywords,
-}: SeoKeywordsTabContentProps) => {
+  isLoading = false
+}) => {
   const [isAddingKeyword, setIsAddingKeyword] = useState(false);
   const [sortConfig, setSortConfig] = useState<SortConfig>({
     key: null,
@@ -27,6 +33,25 @@ export const SeoKeywordsTabContent = ({
   });
   const [searchTerm, setSearchTerm] = useState("");
   const { showConfirm, confirmDialog } = useConfirmDialog();
+  
+  // Initialize with all required fields
+  const [newKeyword, setNewKeyword] = useState<NewSeoKeyword>({
+    keyword: '',
+    searchResults: 0,
+    searchVolume: 0,
+    costPerClick: '0'
+  });
+
+  // Reset form function should also reset to initial state
+  const resetForm = () => {
+    setNewKeyword({
+      keyword: '',
+      searchResults: 0,
+      searchVolume: 0,
+      costPerClick: '0'
+    });
+    setIsAddingKeyword(false);
+  };
 
   // Show the add keyword form
   const showAddKeywordForm = () => {
@@ -263,6 +288,31 @@ export const SeoKeywordsTabContent = ({
     keyword.keyword.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const handleAddKeyword = async () => {
+    if (!newKeyword.keyword) return;
+
+    try {
+      const response = await contentStrategyApi.createSeoKeyword(newKeyword);
+      setKeywords([...keywords, response]);
+      resetForm();
+      showToastAlert('Keyword added successfully!', 'success');
+    } catch (error) {
+      console.error('Error adding keyword:', error);
+      showToastAlert('Error adding keyword. Please try again.', 'error');
+    }
+  };
+
+  const handleDeleteKeyword = async (id: string) => {
+    try {
+      await contentStrategyApi.deleteSeoKeyword(id);
+      setKeywords(keywords.filter(k => k.id !== id));
+      showToastAlert('Keyword deleted successfully!', 'success');
+    } catch (error) {
+      console.error('Error deleting keyword:', error);
+      showToastAlert('Error deleting keyword. Please try again.', 'error');
+    }
+  };
+
   return (
     <TooltipProvider>
       <div className="space-y-6">
@@ -288,7 +338,7 @@ export const SeoKeywordsTabContent = ({
         {/* Keyword Form Component */}
         <KeywordForm 
           isOpen={isAddingKeyword} 
-          onClose={() => setIsAddingKeyword(false)}
+          onClose={resetForm}
           onAddKeywords={addKeywords}
         />
 
@@ -310,7 +360,7 @@ export const SeoKeywordsTabContent = ({
                 keywords={filteredKeywords} 
                 sortConfig={sortConfig} 
                 onSort={requestSort}
-                onDelete={removeKeyword}
+                onDelete={handleDeleteKeyword}
                 searchTerm={searchTerm}
                 setSearchTerm={setSearchTerm}
               />
