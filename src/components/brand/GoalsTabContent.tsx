@@ -78,22 +78,32 @@ export const GoalsTabContent: React.FC<GoalsTabContentProps> = ({
 
   const [isEnhancing, setIsEnhancing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [previousIsEditing, setPreviousIsEditing] = useState(isEditing);
 
-  // Save changes when editing is toggled off
   useEffect(() => {
-    if (!isEditing) {
+    if (previousIsEditing && !isEditing) {
       handleSave();
     }
+    setPreviousIsEditing(isEditing);
   }, [isEditing]);
 
   const handleSave = async () => {
     try {
       await contentStrategyApi.updateMissionAndGoals({
-        primaryGoal,
-        orgType,
-        contentMission,
-        needsRecommendations,
-        selectedKpis
+        content_strategy: {
+          mission: contentMission,
+          goal: primaryGoal.replace(/_/g, ' ')
+                         .split(' ')
+                         .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                         .join(' '),
+          organization_type: orgType.toUpperCase(),
+          kpis: selectedKpis.map(kpi => 
+            kpi.replace(/_/g, ' ')
+               .split(' ')
+               .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+               .join(' ')
+          )
+        }
       });
       showToastAlert('Goals and mission updated successfully!', 'success');
     } catch (error) {

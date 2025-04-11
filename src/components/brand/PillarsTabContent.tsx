@@ -60,8 +60,8 @@ export const PillarsTabContent: React.FC<PillarsTabContentProps> = ({
       const pillarData = {
         name: newPillar.name,
         description: newPillar.description,
-        headlines: newPillar.headlines || "",
-        keywords: newPillar.keywords || []
+        examples: newPillar.examples || "",
+        seo_keywords_names: newPillar.seo_keywords_names || []
       };
 
       const createdPillar = await contentStrategyApi.createPillar(pillarData);
@@ -112,20 +112,20 @@ export const PillarsTabContent: React.FC<PillarsTabContentProps> = ({
 
   const toggleKeyword = (keyword: string) => {
     try {
-      const isSelected = newPillar?.keywords?.includes(keyword) || false;
+      const isSelected = newPillar?.seo_keywords_names?.includes(keyword) || false;
       let updatedKeywords: string[];
       
       if (isSelected) {
         // Remove the keyword if it's already selected
-        updatedKeywords = newPillar?.keywords?.filter(k => k !== keyword) || [];
+        updatedKeywords = newPillar?.seo_keywords_names?.filter(k => k !== keyword) || [];
       } else {
         // Add the keyword if it's not already selected
-        updatedKeywords = [...(newPillar?.keywords || []), keyword];
+        updatedKeywords = [...(newPillar?.seo_keywords_names || []), keyword];
       }
       
       setNewPillar({
         ...newPillar,
-        keywords: updatedKeywords
+        seo_keywords_names: updatedKeywords
       });
     } catch (error) {
       console.error("Error toggling keyword:", error);
@@ -205,18 +205,18 @@ export const PillarsTabContent: React.FC<PillarsTabContentProps> = ({
                             <p className="text-gray-700">{pillar.description || "No description provided."}</p>
                           </div>
                           
-                          {pillar.headlines && (
+                          {pillar.examples && (
                             <div>
                               <p className="text-sm text-gray-500 mb-1">Example Headlines</p>
-                              <p className="text-gray-700">{pillar.headlines}</p>
+                              <p className="text-gray-700">{pillar.examples}</p>
                             </div>
                           )}
                           
-                          {pillar.keywords.length > 0 && (
+                          {pillar.seo_keywords_names.length > 0 && (
                             <div>
                               <p className="text-sm text-gray-500 mb-1">SEO Keywords</p>
                               <div className="flex flex-wrap gap-2">
-                                {pillar.keywords.map(keyword => (
+                                {pillar.seo_keywords_names.map(keyword => (
                                   <div key={keyword} className="bg-blue-50 text-orange-500 px-2 py-1 rounded text-sm">
                                     {keyword}
                                   </div>
@@ -282,8 +282,8 @@ export const PillarsTabContent: React.FC<PillarsTabContentProps> = ({
                   <Label htmlFor="pillar-headlines">Example Headlines</Label>
                   <Textarea
                     id="pillar-headlines"
-                    value={newPillar?.headlines || ""}
-                    onChange={(e) => setNewPillar({ ...newPillar, headlines: e.target.value })}
+                    value={newPillar?.examples || ""}
+                    onChange={(e) => setNewPillar({ ...newPillar, examples: e.target.value })}
                     placeholder="Add some example headlines for this pillar..."
                     rows={2}
                   />
@@ -345,7 +345,7 @@ export const PillarsTabContent: React.FC<PillarsTabContentProps> = ({
                                         <Check
                                           className={cn(
                                             "mr-2 h-4 w-4",
-                                            newPillar?.keywords?.includes(keywordObj.keyword) ? "opacity-100" : "opacity-0"
+                                            newPillar?.seo_keywords_names?.includes(keywordObj.keyword) ? "opacity-100" : "opacity-0"
                                           )}
                                         />
                                         {keywordObj.keyword}
@@ -376,9 +376,9 @@ export const PillarsTabContent: React.FC<PillarsTabContentProps> = ({
                                       >
                                         <div className={cn(
                                           "w-4 h-4 mr-2 border rounded flex items-center justify-center",
-                                          newPillar?.keywords?.includes(keywordObj.keyword) ? "bg-blue-500 border-blue-500" : "border-gray-300"
+                                          newPillar?.seo_keywords_names?.includes(keywordObj.keyword) ? "bg-blue-500 border-blue-500" : "border-gray-300"
                                         )}>
-                                          {newPillar?.keywords?.includes(keywordObj.keyword) && (
+                                          {newPillar?.seo_keywords_names?.includes(keywordObj.keyword) && (
                                             <Check className="h-3 w-3 text-white" />
                                           )}
                                         </div>
@@ -401,8 +401,8 @@ export const PillarsTabContent: React.FC<PillarsTabContentProps> = ({
                     {/* Selected keywords below the dropdown, full width */}
                     <div className="w-full border rounded-md p-2 min-h-[40px] max-h-[120px] overflow-y-auto">
                       <div className="flex flex-wrap gap-2">
-                        {newPillar?.keywords?.length > 0 ? (
-                          newPillar.keywords.map(keyword => (
+                        {newPillar?.seo_keywords_names?.length > 0 ? (
+                          newPillar.seo_keywords_names.map(keyword => (
                             <Badge 
                               key={keyword} 
                               className="bg-blue-50 text-orange-500 hover:bg-blue-100 mb-1"
@@ -445,7 +445,18 @@ export const PillarsTabContent: React.FC<PillarsTabContentProps> = ({
                 </Button>
                 <Button
                   type="button"
-                  onClick={handleAddPillar}
+                  onClick={() => {
+                    if (editingPillarId && newPillar) {
+                      // If we're editing an existing pillar
+                      handleUpdatePillar({
+                        ...newPillar,
+                        id: editingPillarId
+                      } as ContentPillar);
+                    } else {
+                      // If we're creating a new pillar
+                      handleAddPillar();
+                    }
+                  }}
                 >
                   Save
                 </Button>

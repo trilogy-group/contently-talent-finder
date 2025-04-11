@@ -9,7 +9,7 @@ import { contentStrategyApi } from "@/utils/api";
 import { showToastAlert } from "@/components/ui/toast-alert";
 
 // Define the Channel type
-type ChannelStatus = "cannot_use" | "currently_using" | "interested" | "not_interested";
+type ChannelStatus = "cannot_use" | "currently_using" | "interested_in_using" | "not_interested_in_using";
 
 interface Channel {
   id: string;
@@ -30,10 +30,13 @@ export const DistributionTabContent: React.FC<DistributionTabContentProps> = ({
   isEditing,
   isLoading = false
 }) => {
-  // Save changes when editing is toggled off
+  const [previousChannels, setPreviousChannels] = useState(channels);
+
+  // Save changes only when editing is turned off and changes were made
   useEffect(() => {
-    if (!isEditing) {
+    if (!isEditing && JSON.stringify(channels) !== JSON.stringify(previousChannels)) {
       handleSave();
+      setPreviousChannels(channels);
     }
   }, [isEditing]);
 
@@ -112,8 +115,8 @@ export const DistributionTabContent: React.FC<DistributionTabContentProps> = ({
           >
             <div className="flex items-center space-x-2">
               <RadioGroupItem 
-                value="interested" 
-                id={`${channel.id}-interested`} 
+                value="interested_in_using" 
+                id={`${channel.id}-interested_in_using`} 
                 className="text-brand-primary border-brand-primary data-[state=checked]:bg-brand-primary data-[state=checked]:text-white"
               />
             </div>
@@ -129,8 +132,8 @@ export const DistributionTabContent: React.FC<DistributionTabContentProps> = ({
           >
             <div className="flex items-center space-x-2">
               <RadioGroupItem 
-                value="not_interested" 
-                id={`${channel.id}-not_interested`} 
+                value="not_interested_in_using" 
+                id={`${channel.id}-not_interested_in_using`} 
                 className="text-brand-primary border-brand-primary data-[state=checked]:bg-brand-primary data-[state=checked]:text-white"
               />
             </div>
@@ -155,12 +158,6 @@ export const DistributionTabContent: React.FC<DistributionTabContentProps> = ({
             <div className="space-y-6">
               <Card className="overflow-hidden rounded-xl shadow-sm border border-gray-200">
                 <CardContent className="p-0">
-                  {/* Hidden button for toggling edit mode */}
-                  <button 
-                    className="hidden toggle-distribution-edit" 
-                    onClick={handleSave}
-                  ></button>
-
                   <div className="flex justify-between items-center p-4 bg-blue-50 border-b border-gray-200">
                     <h2 className="text-lg font-semibold text-gray-800">Distribution Channels</h2>
                   </div>

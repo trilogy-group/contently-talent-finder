@@ -31,11 +31,11 @@ interface Audience {
 // Define ContentFormat type
 type ContentFormat = {
   id: string;
-  format: string;
-  subFormat: string;
-  quantity: number;
+  story_format: string;
+  subformat: string;
+  story_count: number;
   frequency: string;
-  price: number;
+  estimated_pay_per_story: number;
 };
 
 // Define Channel type
@@ -93,11 +93,15 @@ const BrandCompass = () => {
         ]);
 
         // Update state with fetched data
-        setPrimaryGoal(missionAndGoals.primaryGoal || "brand_awareness");
-        setOrgType(missionAndGoals.orgType || "b2c");
-        setContentMission(missionAndGoals.contentMission || "");
-        setNeedsRecommendations(missionAndGoals.needsRecommendations || false);
-        setSelectedKpis(missionAndGoals.selectedKpis || []);
+        setPrimaryGoal(missionAndGoals.goal?.toLowerCase()?.replace(' ', '_') || "brand_awareness");
+        setOrgType(missionAndGoals.organization_type?.toLowerCase() || "b2c");
+        setContentMission(missionAndGoals.mission || "");
+        setNeedsRecommendations(false);
+        setSelectedKpis(
+          (missionAndGoals.kpis || []).map(kpi => 
+            kpi.toLowerCase().replace(/\s+/g, '_')
+          )
+        );
         
         setAudiences(audiences || []);
         
@@ -110,7 +114,7 @@ const BrandCompass = () => {
         setPillars(pillars || []);
         setDistributionChannels(distribution.channels || []);
         setSeoKeywords(seoKeywords || []);
-        setContentPlan(contentPlan);
+        setContentPlan(contentPlan.length > 0 ? contentPlan[0] : null);
 
       } catch (error) {
         console.error('Error loading initial data:', error);
@@ -129,10 +133,6 @@ const BrandCompass = () => {
   // Function to handle distribution edit toggle
   const handleDistributionEditToggle = () => {
     setIsDistributionEditing(!isDistributionEditing);
-    const toggleEditButton = document.querySelector('.toggle-distribution-edit');
-    if (toggleEditButton) {
-      (toggleEditButton as HTMLButtonElement).click();
-    }
   };
 
   // Function to save data to database
@@ -158,11 +158,17 @@ const BrandCompass = () => {
       // Save data to all endpoints in parallel
       await Promise.all([
         contentStrategyApi.updateMissionAndGoals({
-          primaryGoal,
-          orgType,
-          contentMission,
-          needsRecommendations,
-          selectedKpis
+          content_strategy: {
+            mission: contentMission,
+            goal: primaryGoal.replace(/_/g, ' '),
+            organization_type: orgType.toUpperCase(),
+            kpis: selectedKpis.map(kpi => 
+              kpi.replace(/_/g, ' ')
+                 .split(' ')
+                 .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                 .join(' ')
+            )
+          }
         }),
         contentStrategyApi.updateVoiceAndStyle({
           voiceDescription,
@@ -246,15 +252,15 @@ const BrandCompass = () => {
       id: "1",
       name: "Content Creation",
       description: "Best practices and strategies for creating engaging content across different platforms.",
-      headlines: "10 Ways to Create Viral Content\nHow to Optimize Your Content for Search Engines\nVideo Content Tips for Beginners",
-      keywords: ["content creation", "content strategy", "video content", "blogging"]
+      examples: "10 Ways to Create Viral Content\nHow to Optimize Your Content for Search Engines\nVideo Content Tips for Beginners",
+      seo_keywords_names: ["content creation", "content strategy", "video content", "blogging"]
     },
     {
       id: "2",
       name: "Digital Marketing Trends",
       description: "Latest trends and developments in the field of digital marketing.",
-      headlines: "Emerging Social Media Platforms to Watch\nAI in Marketing: Current Applications and Future Potential\nThe Rise of Voice Search",
-      keywords: ["digital marketing", "marketing trends", "AI marketing", "voice search"]
+      examples: "Emerging Social Media Platforms to Watch\nAI in Marketing: Current Applications and Future Potential\nThe Rise of Voice Search",
+      seo_keywords_names: ["digital marketing", "marketing trends", "AI marketing", "voice search"]
     }
   ]);
 
@@ -453,7 +459,7 @@ const BrandCompass = () => {
   const calculateQuarterlySpend = (formats: ContentFormat[]) => {
     return formats.reduce((total, format) => {
       const multiplier = getFrequencyMultiplier(format.frequency);
-      return total + format.price * format.quantity * multiplier;
+      return total + format.estimated_pay_per_story * format.story_count * multiplier;
     }, 0);
   };
 
@@ -481,7 +487,7 @@ const BrandCompass = () => {
   };
 
   // Total quarterly spend across all plans
-  const totalQuarterlySpend = contentPlan ? calculateQuarterlySpend(contentPlan.contentFormats) : 0;
+  const totalQuarterlySpend = contentPlan ? calculateQuarterlySpend(contentPlan.planned_stories) : 0;
 
   // Add the handler function
   const handleStrategyChange = (strategy: string) => {

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -32,16 +32,43 @@ export const ContentPlanTabContent: React.FC<ContentPlanTabContentProps> = ({
   const [editingFormats, setEditingFormats] = useState<ContentFormat[]>([]);
   const [planName, setPlanName] = useState("");
   const { showConfirm, confirmDialog } = useConfirmDialog();
+  const [formatOptions, setFormatOptions] = useState<Array<{value: string, label: string, dbValue: string}>>([]);
+
+  // Add useEffect to fetch options
+  useEffect(() => {
+    const fetchOptions = async () => {
+      try {
+        const response = await fetch('https://a0wtldhbib.execute-api.us-east-1.amazonaws.com/prod/options');
+        const data = await response.json();
+        // Map the format options to match the database values
+        const mappedFormats = data.storyFormats.map(format => ({
+          value: format.value,
+          label: format.label,
+          // Add a mapping for the database value
+          dbValue: format.value.toLowerCase().replace(/[\s\/]+/g, '')
+        }));
+        setFormatOptions(mappedFormats);
+      } catch (error) {
+        console.error('Error fetching format options:', error);
+      }
+    };
+
+    fetchOptions();
+  }, []);
 
   // Get format icon based on content type
   const getFormatIcon = (format: string) => {
-    switch (format.toLowerCase()) {
+    const normalizedFormat = format.toLowerCase();
+    switch (normalizedFormat) {
+      case "article":
       case "article / blog post":
         return <FileText className="h-5 w-5" />;
       case "ebook":
         return <BookOpen className="h-5 w-5" />;
+      case "presentation":
       case "presentation / brochure":
         return <PresentationIcon className="h-5 w-5" />;
+      case "research":
       case "original research":
         return <Search className="h-5 w-5" />;
       default:
@@ -53,7 +80,7 @@ export const ContentPlanTabContent: React.FC<ContentPlanTabContentProps> = ({
   const calculateQuarterlySpend = (formats: ContentFormat[]) => {
     return formats.reduce((total, format) => {
       const multiplier = getFrequencyMultiplier(format.frequency);
-      return total + format.price * format.quantity * multiplier;
+      return total + format.estimated_pay_per_story * format.story_count * multiplier;
     }, 0);
   };
 
@@ -73,11 +100,13 @@ export const ContentPlanTabContent: React.FC<ContentPlanTabContentProps> = ({
 
   // Format as currency
   const formatCurrency = (amount: number) => {
+    if (!amount) return null;
+    const adjustedAmount = Math.round(amount / 100);
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
       maximumFractionDigits: 0,
-    }).format(amount);
+    }).format(adjustedAmount);
   };
 
   // Convert frequency to yearly format for display
@@ -98,7 +127,7 @@ export const ContentPlanTabContent: React.FC<ContentPlanTabContentProps> = ({
   const startEditing = () => {
     if (contentPlan) {
       setPlanName(contentPlan.name);
-      setEditingFormats([...contentPlan.contentFormats]);
+      setEditingFormats([...contentPlan.planned_stories]);
     } else {
       setPlanName("");
       setEditingFormats([]);
@@ -119,14 +148,31 @@ export const ContentPlanTabContent: React.FC<ContentPlanTabContentProps> = ({
     }
 
     try {
-      const updatedPlan: ContentPlan = {
-        id: contentPlan?.id || Date.now().toString(),
-        name: planName,
-        contentFormats: editingFormats,
+      const updatedPlan = {
+        pillar: {
+          id: contentPlan?.id || Date.now().toString(),
+          name: planName,
+          planned_stories_attributes: editingFormats.map(format => ({
+            id: format.id || Date.now().toString(),
+            story_format: format.story_format,
+            subformat: format.subformat,
+            story_count: format.story_count,
+            frequency: format.frequency.toLowerCase(),
+            estimated_pay_per_story_in_dollars: format.estimated_pay_per_story / 100
+          }))
+        }
       };
 
       await contentStrategyApi.updatePlan(updatedPlan);
-      setContentPlan(updatedPlan);
+      setContentPlan({
+        id: updatedPlan.pillar.id,
+        name: updatedPlan.pillar.name,
+        planned_stories: editingFormats.map(format => ({
+          ...format,
+          id: format.id || Date.now().toString(),
+          frequency: format.frequency.toLowerCase()
+        }))
+      });
       setIsEditing(false);
       showToastAlert('Content plan updated successfully!', 'success');
     } catch (error) {
@@ -140,7 +186,7 @@ export const ContentPlanTabContent: React.FC<ContentPlanTabContentProps> = ({
     setIsEditing(false);
     if (contentPlan) {
       setPlanName(contentPlan.name);
-      setEditingFormats([...contentPlan.contentFormats]);
+      setEditingFormats([...contentPlan.planned_stories]);
     } else {
       setPlanName("");
       setEditingFormats([]);
@@ -158,11 +204,11 @@ export const ContentPlanTabContent: React.FC<ContentPlanTabContentProps> = ({
   const addContentFormat = () => {
     const newFormat: ContentFormat = {
       id: Date.now().toString(),
-      format: "Article / blog post",
-      subFormat: "",
-      quantity: 1,
-      frequency: "Monthly",
-      price: 0,
+      story_format: "article",
+      subformat: "",
+      story_count: 1,
+      frequency: "monthly",
+      estimated_pay_per_story: 0,
     };
     setEditingFormats([...editingFormats, newFormat]);
   };
@@ -172,39 +218,29 @@ export const ContentPlanTabContent: React.FC<ContentPlanTabContentProps> = ({
     setEditingFormats(editingFormats.filter(format => format.id !== id));
   };
 
-  // Format options
-  const formatOptions = [
-    "Article / blog post",
-    "eBook",
-    "Presentation / brochure",
-    "Original research",
-    "Video",
-    "Podcast",
-    "Infographic",
-    "Newsletter",
-    "White paper",
-    "Case study"
+  // Update frequency options to include value/label pairs
+  const frequencyOptions = [
+    { value: "monthly", label: "Monthly" },
+    { value: "quarterly", label: "Quarterly" },
+    { value: "yearly", label: "Yearly" }
   ];
 
-  // Sub-format options based on format
+  // Total quarterly spend across all plans
+  const totalQuarterlySpend = contentPlan ? calculateQuarterlySpend(contentPlan.planned_stories) : 0;
+
+  // Update getSubFormatOptions to work with format labels
   const getSubFormatOptions = (format: string) => {
-    switch (format) {
-      case "Article / blog post":
+    switch (format.toLowerCase()) {
+      case "article / blog post":
         return ["Reported article", "Opinion piece", "How-to guide", "Listicle"];
-      case "eBook":
+      case "ebook":
         return ["Educational", "Guide", "Report", "Collection"];
-      case "Presentation / brochure":
+      case "presentation / brochure":
         return ["Data-driven", "Sales", "Educational", "Training"];
       default:
         return [];
     }
   };
-
-  // Frequency options
-  const frequencyOptions = ["Monthly", "Quarterly", "Yearly"];
-
-  // Total quarterly spend across all plans
-  const totalQuarterlySpend = contentPlan ? calculateQuarterlySpend(contentPlan.contentFormats) : 0;
 
   return (
     <div className="space-y-6">
@@ -240,8 +276,106 @@ export const ContentPlanTabContent: React.FC<ContentPlanTabContentProps> = ({
                     <div className="space-y-6">
                       {editingFormats.map((format) => (
                         <div key={format.id} className="space-y-4 p-4 border border-gray-200 rounded-lg">
-                          {/* Format content here */}
-                          {/* ... existing format content ... */}
+                          <div className="flex justify-between items-start">
+                            <div className="flex-1 space-y-4">
+                              {/* Story Format */}
+                              <div>
+                                <Label className="text-sm font-medium text-gray-700">Format</Label>
+                                <Select
+                                  value={formatOptions.find(opt => opt.dbValue === format.story_format)?.label || ''}
+                                  onValueChange={(value) => {
+                                    const selectedFormat = formatOptions.find(opt => opt.label === value);
+                                    updateContentFormat(format.id, "story_format", selectedFormat?.dbValue || value);
+                                  }}
+                                >
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select format" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {formatOptions.map((option) => (
+                                      <SelectItem key={option.value} value={option.label}>
+                                        {option.label}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+
+                              {/* Subformat - only show if subformat options exist */}
+                              {getSubFormatOptions(format.story_format).length > 0 && (
+                                <div>
+                                  <Label className="text-sm font-medium text-gray-700">Subformat</Label>
+                                  <Select
+                                    value={format.subformat}
+                                    onValueChange={(value) => updateContentFormat(format.id, "subformat", value)}
+                                  >
+                                    <SelectTrigger>
+                                      <SelectValue placeholder="Select subformat" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {getSubFormatOptions(format.story_format).map((subformat) => (
+                                        <SelectItem key={subformat} value={subformat}>
+                                          {subformat}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                              )}
+
+                              {/* Story Count */}
+                              <div>
+                                <Label className="text-sm font-medium text-gray-700">Number of Stories</Label>
+                                <Input
+                                  type="number"
+                                  min="1"
+                                  value={format.story_count}
+                                  onChange={(e) => updateContentFormat(format.id, "story_count", parseInt(e.target.value) || 1)}
+                                />
+                              </div>
+
+                              {/* Frequency */}
+                              <div>
+                                <Label className="text-sm font-medium text-gray-700">Frequency</Label>
+                                <Select
+                                  value={format.frequency.toLowerCase()}
+                                  onValueChange={(value) => updateContentFormat(format.id, "frequency", value)}
+                                >
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select frequency" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {frequencyOptions.map((option) => (
+                                      <SelectItem key={option.value} value={option.value}>
+                                        {option.label}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+
+                              {/* Estimated Pay */}
+                              <div>
+                                <Label className="text-sm font-medium text-gray-700">Estimated Pay per Story</Label>
+                                <Input
+                                  type="number"
+                                  min="0"
+                                  value={format.estimated_pay_per_story / 100}
+                                  onChange={(e) => updateContentFormat(format.id, "estimated_pay_per_story", Math.round(parseFloat(e.target.value) * 100) || 0)}
+                                />
+                              </div>
+                            </div>
+
+                            {/* Remove Format Button */}
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => removeContentFormat(format.id)}
+                              className="text-gray-400 hover:text-red-600"
+                            >
+                              <Trash2 className="h-5 w-5" />
+                            </Button>
+                          </div>
                         </div>
                       ))}
 
@@ -272,14 +406,14 @@ export const ContentPlanTabContent: React.FC<ContentPlanTabContentProps> = ({
                     
                     {contentPlan ? (
                       <div className="space-y-2">
-                        {contentPlan.contentFormats.map((format) => (
+                        {contentPlan.planned_stories.map((format) => (
                           <div key={format.id} className="flex items-start">
                             <div className="h-6 w-6 mt-1 mr-2">
-                              {getFormatIcon(format.format)}
+                              {getFormatIcon(format.story_format)}
                             </div>
                             <div>
-                              {format.quantity} {format.frequency.toLowerCase()} {format.format}{format.quantity > 1 ? 's' : ''} 
-                              {format.subFormat ? ` (${format.subFormat})` : ''} at {formatCurrency(format.price)} each
+                              {format.story_count} {format.frequency.toLowerCase()} {format.story_format}{format.story_count > 1 ? 's' : ''} 
+                              {format.subformat ? ` (${format.subformat})` : ''} {format.estimated_pay_per_story ? `at ${formatCurrency(format.estimated_pay_per_story)} each` : ''}
                             </div>
                           </div>
                         ))}

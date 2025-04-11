@@ -1,24 +1,25 @@
 export type ContentFormat = {
   id: string;
-  format: string;
-  subFormat: string;
-  quantity: number;
+  content_pillar_id: string;
+  story_format: string;
+  subformat: string;
+  story_count: number;
   frequency: string;
-  price: number;
+  estimated_pay_per_story: number;
 };
 
 export type ContentPlan = {
   id: string;
   name: string;
-  contentFormats: ContentFormat[];
+  planned_stories: ContentFormat[];
 };
 
 export type ContentPillar = {
   id: string;
   name: string;
   description: string;
-  headlines: string;
-  keywords: string[];
+  examples: string;
+  seo_keywords_names: string[];
 };
 
 export type SeoKeyword = {

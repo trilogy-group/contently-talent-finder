@@ -185,13 +185,13 @@ export const contentStrategyApi = {
 
   // Content Plan endpoints
   async getPlan() {
-    const response = await fetch(`${API_BASE_URL}/content-strategy/${PUBLICATION_ID}/plan`);
+    const response = await fetch(`${API_BASE_URL}/content-strategy/${PUBLICATION_ID}/plans`);
     if (!response.ok) throw new Error('Failed to fetch plan');
     return response.json();
   },
 
-  async updatePlan(plan: ContentPlan) {
-    const response = await fetch(`${API_BASE_URL}/content-strategy/${PUBLICATION_ID}/plan`, {
+  async updatePlan(plan: any) {
+    const response = await fetch(`${API_BASE_URL}/content-strategy/${PUBLICATION_ID}/plans/${plan.pillar.id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(plan)
