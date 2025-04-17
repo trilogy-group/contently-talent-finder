@@ -1,6 +1,7 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { Pool } from 'pg';
 import { MCPRequest, MCPResponse } from '../../types/mcp';
+import { ContentStrategy, Pillar, Audience, SeoKeyword } from '../../types/content-strategy';
 
 const pool = new Pool({
   host: process.env.DB_HOST,
@@ -102,6 +103,9 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
       error: null
     };
 
+    // Get publication ID from request params
+    const publicationId = mcpRequest.params.publicationId || '3088'; // Default value
+
     switch (mcpRequest.action) {
       case 'searchTalent':
         // Parse natural language query
@@ -171,6 +175,162 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
           [mcpRequest.params.limit || 10, mcpRequest.params.offset || 0]
         );
         response.data = talents.rows;
+        break;
+
+      // Content Strategy Overview
+      case 'getContentStrategyOverview':
+        const overviewResponse = await fetch(
+          `${process.env.CONTENTLY_API_ENDPOINT}/api/v1/publications/${publicationId}/content_strategy/show`,
+          {
+            headers: {
+              'X-API-KEY': process.env.CONTENTLY_API_KEY || '',
+            }
+          }
+        );
+        if (!overviewResponse.ok) {
+          throw new Error(`Failed to fetch content strategy overview: ${overviewResponse.statusText}`);
+        }
+        response.data = await overviewResponse.json();
+        break;
+
+      // Mission and Goals
+      case 'getMissionAndGoals':
+        const missionResponse = await fetch(
+          `${process.env.CONTENTLY_API_ENDPOINT}/api/v1/publications/${publicationId}/content_strategy/mission_and_goals`,
+          {
+            headers: {
+              'X-API-KEY': process.env.CONTENTLY_API_KEY || '',
+            }
+          }
+        );
+        if (!missionResponse.ok) {
+          throw new Error(`Failed to fetch mission and goals: ${missionResponse.statusText}`);
+        }
+        response.data = await missionResponse.json();
+        break;
+
+      case 'updateMissionAndGoals':
+        const missionUpdateResponse = await fetch(
+          `${process.env.CONTENTLY_API_ENDPOINT}/api/v1/publications/${publicationId}/content_strategy/mission_and_goals`,
+          {
+            method: 'PUT',
+            headers: {
+              'X-API-KEY': process.env.CONTENTLY_API_KEY || '',
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              content_strategy: mcpRequest.params.content_strategy
+            })
+          }
+        );
+        if (!missionUpdateResponse.ok) {
+          throw new Error(`Failed to update mission and goals: ${missionUpdateResponse.statusText}`);
+        }
+        response.data = await missionUpdateResponse.json();
+        break;
+
+      // Pillars
+      case 'listPillars':
+        const pillarsResponse = await fetch(
+          `${process.env.CONTENTLY_API_ENDPOINT}/api/v1/publications/${publicationId}/content_strategy/pillars`,
+          {
+            headers: {
+              'X-API-KEY': process.env.CONTENTLY_API_KEY || '',
+            }
+          }
+        );
+        if (!pillarsResponse.ok) {
+          throw new Error(`Failed to fetch pillars: ${pillarsResponse.statusText}`);
+        }
+        response.data = await pillarsResponse.json();
+        break;
+
+      case 'createPillar':
+        const pillarCreateResponse = await fetch(
+          `${process.env.CONTENTLY_API_ENDPOINT}/api/v1/publications/${publicationId}/content_strategy/pillars`,
+          {
+            method: 'POST',
+            headers: {
+              'X-API-KEY': process.env.CONTENTLY_API_KEY || '',
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ pillar: mcpRequest.params.pillar })
+          }
+        );
+        if (!pillarCreateResponse.ok) {
+          throw new Error(`Failed to create pillar: ${pillarCreateResponse.statusText}`);
+        }
+        response.data = await pillarCreateResponse.json();
+        break;
+
+      // Distribution
+      case 'getDistribution':
+        const distributionResponse = await fetch(
+          `${process.env.CONTENTLY_API_ENDPOINT}/api/v1/publications/${publicationId}/content_strategy/distribution`,
+          {
+            headers: {
+              'X-API-KEY': process.env.CONTENTLY_API_KEY || '',
+            }
+          }
+        );
+        if (!distributionResponse.ok) {
+          throw new Error(`Failed to fetch distribution: ${distributionResponse.statusText}`);
+        }
+        response.data = await distributionResponse.json();
+        break;
+
+      case 'updateDistribution':
+        const distributionUpdateResponse = await fetch(
+          `${process.env.CONTENTLY_API_ENDPOINT}/api/v1/publications/${publicationId}/content_strategy/distribution`,
+          {
+            method: 'PUT',
+            headers: {
+              'X-API-KEY': process.env.CONTENTLY_API_KEY || '',
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              content_strategy: mcpRequest.params.content_strategy
+            })
+          }
+        );
+        if (!distributionUpdateResponse.ok) {
+          throw new Error(`Failed to update distribution: ${distributionUpdateResponse.statusText}`);
+        }
+        response.data = await distributionUpdateResponse.json();
+        break;
+
+      // SEO Keywords
+      case 'getSeoKeywords':
+        const keywordsResponse = await fetch(
+          `${process.env.CONTENTLY_API_ENDPOINT}/api/v1/publications/${publicationId}/content_strategy/seo_keywords`,
+          {
+            headers: {
+              'X-API-KEY': process.env.CONTENTLY_API_KEY || '',
+            }
+          }
+        );
+        if (!keywordsResponse.ok) {
+          throw new Error(`Failed to fetch SEO keywords: ${keywordsResponse.statusText}`);
+        }
+        response.data = await keywordsResponse.json();
+        break;
+
+      case 'createSeoKeyword':
+        const keywordCreateResponse = await fetch(
+          `${process.env.CONTENTLY_API_ENDPOINT}/api/v1/publications/${publicationId}/content_strategy/seo_keywords`,
+          {
+            method: 'POST',
+            headers: {
+              'X-API-KEY': process.env.CONTENTLY_API_KEY || '',
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ seo_keyword: mcpRequest.params.keyword })
+          }
+        );
+        if (!keywordCreateResponse.ok) {
+          throw new Error(`Failed to create SEO keyword: ${keywordCreateResponse.statusText}`);
+        }
+        response.data = await keywordCreateResponse.json();
         break;
 
       default:

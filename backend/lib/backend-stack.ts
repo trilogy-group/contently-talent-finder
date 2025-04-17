@@ -81,6 +81,8 @@ export class BackendStack extends cdk.Stack {
         DB_NAME: process.env.DB_NAME || '',
         DB_USER: process.env.DB_USER || '',
         DB_PASSWORD: process.env.DB_PASSWORD || '',
+        CONTENTLY_API_ENDPOINT: process.env.CONTENTLY_API_ENDPOINT || 'https://snuffl.in',
+        CONTENTLY_API_KEY: process.env.CONTENTLY_API_KEY || 'vrmVRqar57W4rkKSZvgDKjazmBLEBUcM',
       },
       bundling: {
         minify: true,
