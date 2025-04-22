@@ -38,6 +38,9 @@ const TalentSearchV5 = () => {
   const [talents, setTalents] = useState<TalentData[]>([]);
   const [hasSearched, setHasSearched] = useState(false);
 
+  // Add new state for publication
+  const [selectedPublication, setSelectedPublication] = useState<string | null>(null);
+
   // Update filters based on selected strategy
   useEffect(() => {
     if (selectedStrategy) {
@@ -239,6 +242,15 @@ const TalentSearchV5 = () => {
     if (isRecording) {
       stopRecording();
     }
+
+    // Reset publication
+    setSelectedPublication(null);
+    setSelectedPillar(null);  // Make sure pillar is also reset
+    setSelectedSkills([]);
+    setMinScore(null);
+    setMinProjects(null);
+    setSortOrder("relevance");
+    setContentExamples("");
   };
 
   // Filter talent profiles based on search and filter criteria
@@ -330,6 +342,8 @@ const TalentSearchV5 = () => {
                   setResultCount={setResultCount}
                   setTalents={handleSearchResults}
                   setHasSearched={setHasSearched}
+                  selectedPublication={selectedPublication}
+                  setSelectedPublication={setSelectedPublication}
                 />
               ) : (
                 <ChatSidebar

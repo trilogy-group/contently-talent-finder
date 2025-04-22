@@ -42,7 +42,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
       },
       body: JSON.stringify({
         talent_request: {
-          brand_profile_id: searchCriteria.brandProfileId ?? 3088,
+          brand_profile_id: searchCriteria.brandProfileId ?? 1230,
           name: searchCriteriaNameDescription,
           description: searchCriteriaNameDescription,
           story_format: searchCriteria.storyFormat ?? 'article',

@@ -53,6 +53,8 @@ const extractNumber = (text: string): number | null => {
   return null;
 };
 
+const TALENT_API_URL = 'https://9w2hge8i7d.execute-api.us-east-1.amazonaws.com/prod';
+
 export const useTalentChat = ({
   setSelectedRoles,
   setSelectedIndustries,
@@ -89,7 +91,7 @@ export const useTalentChat = ({
   useEffect(() => {
     const fetchOptions = async () => {
       try {
-        const response = await fetch('https://a0wtldhbib.execute-api.us-east-1.amazonaws.com/prod/options');
+        const response = await fetch(`${TALENT_API_URL}/options`);
         const data = await response.json();
         
         setFormatOptions(data.storyFormats);

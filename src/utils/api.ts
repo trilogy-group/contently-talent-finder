@@ -1,7 +1,7 @@
 import { ContentPlan, ContentPillar, SeoKeyword } from "@/types/content";
 
-const API_BASE_URL = 'https://l0l4yto6u1.execute-api.us-east-1.amazonaws.com/prod';
-const PUBLICATION_ID = '3088';
+const API_BASE_URL = 'https://kzpzktx2u9.execute-api.us-east-1.amazonaws.com/prod';
+const PUBLICATION_ID = '1230';
 
 export const contentStrategyApi = {
   async getOverview() {
@@ -79,8 +79,12 @@ export const contentStrategyApi = {
   },
 
   // Content Pillars endpoints
-  async getPillars() {
-    const response = await fetch(`${API_BASE_URL}/content-strategy/${PUBLICATION_ID}/pillars`);
+  async getPillars(publicationId?: string) {
+    const url = publicationId 
+      ? `${API_BASE_URL}/content-strategy/${publicationId}/pillars`
+      : `${API_BASE_URL}/content-strategy/${PUBLICATION_ID}/pillars`;
+      
+    const response = await fetch(url);
     if (!response.ok) throw new Error('Failed to fetch pillars');
     return response.json();
   },

@@ -38,7 +38,7 @@ export const ContentPlanTabContent: React.FC<ContentPlanTabContentProps> = ({
   useEffect(() => {
     const fetchOptions = async () => {
       try {
-        const response = await fetch('https://a0wtldhbib.execute-api.us-east-1.amazonaws.com/prod/options');
+        const response = await fetch(`${'https://9w2hge8i7d.execute-api.us-east-1.amazonaws.com/prod'}/options`);
         const data = await response.json();
         // Map the format options to match the database values
         const mappedFormats = data.storyFormats.map(format => ({

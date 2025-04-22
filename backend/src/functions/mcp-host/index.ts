@@ -79,7 +79,7 @@ async function parseNaturalLanguageQuery(query: string) {
     
     // Use normalized content examples
     contentExamples: normalizedContentExamples,
-    brandProfileId: 3088, // Default value
+    brandProfileId: 1230, // Default value
     languageId: 1, // Default value
   };
 
@@ -104,7 +104,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
     };
 
     // Get publication ID from request params
-    const publicationId = mcpRequest.params.publicationId || '3088'; // Default value
+    const publicationId = mcpRequest.params.publicationId || '1230'; // Default value
 
     switch (mcpRequest.action) {
       case 'searchTalent':

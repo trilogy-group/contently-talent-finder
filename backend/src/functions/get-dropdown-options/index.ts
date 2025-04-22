@@ -55,6 +55,14 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
       label: row.name
     }));
 
+    // Query visible brand profiles
+    const brandProfilesQuery = await pool.query(
+      'SELECT id, name FROM brand_profiles WHERE active = true and deleted_at is null ORDER BY name'
+    );
+    const brandProfiles: DropdownOption[] = brandProfilesQuery.rows.map(row => ({
+      value: row.id,
+      label: row.name
+    }));
     return {
       statusCode: 200,
       headers: {
@@ -64,7 +72,8 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
       body: JSON.stringify({
         skills,
         storyFormats,
-        topics
+        topics,
+        brandProfiles
       })
     };
   } catch (error) {
