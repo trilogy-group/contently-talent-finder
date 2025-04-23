@@ -1,23 +1,25 @@
 import { ContentPlan, ContentPillar, SeoKeyword } from "@/types/content";
 
-const API_BASE_URL = 'https://l0l4yto6u1.execute-api.us-east-1.amazonaws.com/prod';
-const PUBLICATION_ID = '3088';
+const API_BASE_URL = 'https://kzpzktx2u9.execute-api.us-east-1.amazonaws.com/prod';
 
 export const contentStrategyApi = {
-  async getOverview() {
-    const response = await fetch(`${API_BASE_URL}/content-strategy/${PUBLICATION_ID}`);
+  async getOverview(publicationId?: string) {
+    const id = publicationId || '1230';
+    const response = await fetch(`${API_BASE_URL}/content-strategy/${id}`);
     if (!response.ok) throw new Error('Failed to fetch overview');
     return response.json();
   },
 
-  async getMissionAndGoals() {
-    const response = await fetch(`${API_BASE_URL}/content-strategy/${PUBLICATION_ID}/mission-and-goals`);
+  async getMissionAndGoals(publicationId?: string) {
+    const id = publicationId || '1230';
+    const response = await fetch(`${API_BASE_URL}/content-strategy/${id}/mission-and-goals`);
     if (!response.ok) throw new Error('Failed to fetch mission and goals');
     return response.json();
   },
 
-  async updateMissionAndGoals(data: any) {
-    const response = await fetch(`${API_BASE_URL}/content-strategy/${PUBLICATION_ID}/mission-and-goals`, {
+  async updateMissionAndGoals(data: any, publicationId?: string) {
+    const id = publicationId || '1230';
+    const response = await fetch(`${API_BASE_URL}/content-strategy/${id}/mission-and-goals`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data)
@@ -27,14 +29,16 @@ export const contentStrategyApi = {
   },
 
   // Voice and Style endpoints
-  async getVoiceAndStyle() {
-    const response = await fetch(`${API_BASE_URL}/content-strategy/${PUBLICATION_ID}/voice-and-styles`);
+  async getVoiceAndStyle(publicationId?: string) {
+    const id = publicationId || '1230';
+    const response = await fetch(`${API_BASE_URL}/content-strategy/${id}/voice-and-styles`);
     if (!response.ok) throw new Error('Failed to fetch voice and styles');
     return response.json();
   },
 
-  async updateVoiceAndStyle(data: any) {
-    const response = await fetch(`${API_BASE_URL}/content-strategy/${PUBLICATION_ID}/voice-and-styles`, {
+  async updateVoiceAndStyle(data: any, publicationId?: string) {
+    const id = publicationId || '1230';
+    const response = await fetch(`${API_BASE_URL}/content-strategy/${id}/voice-and-styles`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data)
@@ -44,14 +48,16 @@ export const contentStrategyApi = {
   },
 
   // Audiences endpoints
-  async getAudiences() {
-    const response = await fetch(`${API_BASE_URL}/content-strategy/${PUBLICATION_ID}/audiences`);
+  async getAudiences(publicationId?: string) {
+    const id = publicationId || '1230';
+    const response = await fetch(`${API_BASE_URL}/content-strategy/${id}/audiences`);
     if (!response.ok) throw new Error('Failed to fetch audiences');
     return response.json();
   },
 
-  async createAudience(data: any) {
-    const response = await fetch(`${API_BASE_URL}/content-strategy/${PUBLICATION_ID}/audiences`, {
+  async createAudience(data: any, publicationId?: string) {
+    const id = publicationId || '1230';
+    const response = await fetch(`${API_BASE_URL}/content-strategy/${id}/audiences`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data)
@@ -60,8 +66,8 @@ export const contentStrategyApi = {
     return response.json();
   },
 
-  async updateAudience(id: string, data: any) {
-    const response = await fetch(`${API_BASE_URL}/content-strategy/${PUBLICATION_ID}/audiences/${id}`, {
+  async updateAudience(id: string, data: any, publicationId?: string) {
+    const response = await fetch(`${API_BASE_URL}/content-strategy/${publicationId || '1230'}/audiences/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data)
@@ -70,8 +76,8 @@ export const contentStrategyApi = {
     return response.json();
   },
 
-  async deleteAudience(id: string) {
-    const response = await fetch(`${API_BASE_URL}/content-strategy/${PUBLICATION_ID}/audiences/${id}`, {
+  async deleteAudience(id: string, publicationId?: string) {
+    const response = await fetch(`${API_BASE_URL}/content-strategy/${publicationId || '1230'}/audiences/${id}`, {
       method: 'DELETE'
     });
     if (!response.ok) throw new Error('Failed to delete audience');
@@ -79,14 +85,18 @@ export const contentStrategyApi = {
   },
 
   // Content Pillars endpoints
-  async getPillars() {
-    const response = await fetch(`${API_BASE_URL}/content-strategy/${PUBLICATION_ID}/pillars`);
+  async getPillars(publicationId?: string) {
+    const url = publicationId 
+      ? `${API_BASE_URL}/content-strategy/${publicationId}/pillars`
+      : `${API_BASE_URL}/content-strategy/1230/pillars`;
+      
+    const response = await fetch(url);
     if (!response.ok) throw new Error('Failed to fetch pillars');
     return response.json();
   },
 
-  async updatePillars(pillars: ContentPillar[]) {
-    const response = await fetch(`${API_BASE_URL}/content-strategy/${PUBLICATION_ID}/pillars`, {
+  async updatePillars(pillars: ContentPillar[], publicationId?: string) {
+    const response = await fetch(`${API_BASE_URL}/content-strategy/${publicationId || '1230'}/pillars`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(pillars)
@@ -96,8 +106,8 @@ export const contentStrategyApi = {
   },
 
   // Pillar endpoints
-  async createPillar(pillar: Omit<ContentPillar, 'id'>) {
-    const response = await fetch(`${API_BASE_URL}/content-strategy/${PUBLICATION_ID}/pillars`, {
+  async createPillar(pillar: Omit<ContentPillar, 'id'>, publicationId?: string) {
+    const response = await fetch(`${API_BASE_URL}/content-strategy/${publicationId || '1230'}/pillars`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(pillar)
@@ -106,8 +116,8 @@ export const contentStrategyApi = {
     return response.json();
   },
 
-  async updatePillar(id: string, pillar: ContentPillar) {
-    const response = await fetch(`${API_BASE_URL}/content-strategy/${PUBLICATION_ID}/pillars/${id}`, {
+  async updatePillar(id: string, pillar: ContentPillar, publicationId?: string) {
+    const response = await fetch(`${API_BASE_URL}/content-strategy/${publicationId || '1230'}/pillars/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(pillar)
@@ -116,8 +126,8 @@ export const contentStrategyApi = {
     return response.json();
   },
 
-  async deletePillar(id: string) {
-    const response = await fetch(`${API_BASE_URL}/content-strategy/${PUBLICATION_ID}/pillars/${id}`, {
+  async deletePillar(id: string, publicationId?: string) {
+    const response = await fetch(`${API_BASE_URL}/content-strategy/${publicationId || '1230'}/pillars/${id}`, {
       method: 'DELETE'
     });
     if (!response.ok) throw new Error('Failed to delete pillar');
@@ -125,14 +135,14 @@ export const contentStrategyApi = {
   },
 
   // Content Plans endpoints
-  async getPlans() {
-    const response = await fetch(`${API_BASE_URL}/content-strategy/${PUBLICATION_ID}/plans`);
+  async getPlans(publicationId?: string) {
+    const response = await fetch(`${API_BASE_URL}/content-strategy/${publicationId || '1230'}/plans`);
     if (!response.ok) throw new Error('Failed to fetch plans');
     return response.json();
   },
 
-  async updatePlans(plans: ContentPlan[]) {
-    const response = await fetch(`${API_BASE_URL}/content-strategy/${PUBLICATION_ID}/plans`, {
+  async updatePlans(plans: ContentPlan[], publicationId?: string) {
+    const response = await fetch(`${API_BASE_URL}/content-strategy/${publicationId || '1230'}/plans`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(plans)
@@ -142,14 +152,14 @@ export const contentStrategyApi = {
   },
 
   // Distribution endpoints
-  async getDistribution() {
-    const response = await fetch(`${API_BASE_URL}/content-strategy/${PUBLICATION_ID}/distribution`);
+  async getDistribution(publicationId?: string) {
+    const response = await fetch(`${API_BASE_URL}/content-strategy/${publicationId || '1230'}/distribution`);
     if (!response.ok) throw new Error('Failed to fetch distribution');
     return response.json();
   },
 
-  async updateDistribution(data: any) {
-    const response = await fetch(`${API_BASE_URL}/content-strategy/${PUBLICATION_ID}/distribution`, {
+  async updateDistribution(data: any, publicationId?: string) {
+    const response = await fetch(`${API_BASE_URL}/content-strategy/${publicationId || '1230'}/distribution`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data)
@@ -159,14 +169,14 @@ export const contentStrategyApi = {
   },
 
   // SEO Keywords endpoints
-  async getSeoKeywords() {
-    const response = await fetch(`${API_BASE_URL}/content-strategy/${PUBLICATION_ID}/seo-keywords`);
+  async getSeoKeywords(publicationId?: string) {
+    const response = await fetch(`${API_BASE_URL}/content-strategy/${publicationId || '1230'}/seo-keywords`);
     if (!response.ok) throw new Error('Failed to fetch SEO keywords');
     return response.json();
   },
 
-  async createSeoKeyword(keyword: Omit<SeoKeyword, 'id'>) {
-    const response = await fetch(`${API_BASE_URL}/content-strategy/${PUBLICATION_ID}/seo-keywords`, {
+  async createSeoKeyword(keyword: Omit<SeoKeyword, 'id'>, publicationId?: string) {
+    const response = await fetch(`${API_BASE_URL}/content-strategy/${publicationId || '1230'}/seo-keywords`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(keyword)
@@ -175,8 +185,8 @@ export const contentStrategyApi = {
     return response.json();
   },
 
-  async deleteSeoKeyword(id: string) {
-    const response = await fetch(`${API_BASE_URL}/content-strategy/${PUBLICATION_ID}/seo-keywords/${id}`, {
+  async deleteSeoKeyword(id: string, publicationId?: string) {
+    const response = await fetch(`${API_BASE_URL}/content-strategy/${publicationId || '1230'}/seo-keywords/${id}`, {
       method: 'DELETE'
     });
     if (!response.ok) throw new Error('Failed to delete SEO keyword');
@@ -184,19 +194,26 @@ export const contentStrategyApi = {
   },
 
   // Content Plan endpoints
-  async getPlan() {
-    const response = await fetch(`${API_BASE_URL}/content-strategy/${PUBLICATION_ID}/plans`);
+  async getPlan(publicationId?: string) {
+    const response = await fetch(`${API_BASE_URL}/content-strategy/${publicationId || '1230'}/plans`);
     if (!response.ok) throw new Error('Failed to fetch plan');
     return response.json();
   },
 
-  async updatePlan(plan: any) {
-    const response = await fetch(`${API_BASE_URL}/content-strategy/${PUBLICATION_ID}/plans/${plan.pillar.id}`, {
+  async updatePlan(plan: any, publicationId?: string) {
+    const response = await fetch(`${API_BASE_URL}/content-strategy/${publicationId || '1230'}/plans/${plan.pillar.id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(plan)
     });
     if (!response.ok) throw new Error('Failed to update plan');
+    return response.json();
+  },
+
+  // Add this new method to contentStrategyApi
+  async getPublications() {
+    const response = await fetch('https://9w2hge8i7d.execute-api.us-east-1.amazonaws.com/prod/options');
+    if (!response.ok) throw new Error('Failed to fetch publications');
     return response.json();
   }
 }; 

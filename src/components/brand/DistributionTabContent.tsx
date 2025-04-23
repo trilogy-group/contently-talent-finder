@@ -22,13 +22,15 @@ interface DistributionTabContentProps {
   setChannels: (channels: Channel[]) => void;
   isEditing: boolean;
   isLoading?: boolean;
+  selectedPublication: string;
 }
 
 export const DistributionTabContent: React.FC<DistributionTabContentProps> = ({
   channels,
   setChannels,
   isEditing,
-  isLoading = false
+  isLoading = false,
+  selectedPublication
 }) => {
   const [previousChannels, setPreviousChannels] = useState(channels);
 
@@ -44,7 +46,7 @@ export const DistributionTabContent: React.FC<DistributionTabContentProps> = ({
     try {
       await contentStrategyApi.updateDistribution({
         channels: channels
-      });
+      }, selectedPublication);
       showToastAlert('Distribution channels updated successfully!', 'success');
     } catch (error) {
       console.error('Error updating distribution channels:', error);

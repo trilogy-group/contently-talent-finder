@@ -64,6 +64,12 @@ const TalentSearch = () => {
   // Add state for selected pillar
   const [selectedPillar, setSelectedPillar] = useState<string | null>(null);
 
+  // Add state for selected publication
+  const [selectedPublication, setSelectedPublication] = useState<string | null>(null);
+
+  // Add state for selected language
+  const [selectedLanguage, setSelectedLanguage] = useState<string | null>(null);
+
   // Wrapper functions for state updates
   const updateSelectedIndustries = (industries: string[]) => {
     // Check if industry already exists
@@ -195,10 +201,16 @@ const TalentSearch = () => {
     setSelectedSpecialties([]);
     setSelectedSkills([]);
     setMinExperience(null);
-    setMinScore(null);
-    setMinProjects(null);
     setShowStarredOnly(false);
     setResultCount(10);
+    
+    // Reset publication-related state
+    setSelectedPublication(null);
+    setSelectedPillar(null);
+    setContentExamples("");
+    setMinScore(null);
+    setMinProjects(null);
+    setSortOrder("relevance");
     
     // Reset chat
     setChatHistory([]);
@@ -208,6 +220,9 @@ const TalentSearch = () => {
     if (isRecording) {
       stopRecording();
     }
+
+    // Reset language
+    setSelectedLanguage(null);
   };
 
   // Filter profiles based on current filters
@@ -324,6 +339,10 @@ const TalentSearch = () => {
                   setContentExamples={setContentExamples}
                   selectedPillar={selectedPillar}
                   setSelectedPillar={setSelectedPillar}
+                  selectedPublication={selectedPublication}
+                  setSelectedPublication={setSelectedPublication}
+                  selectedLanguage={selectedLanguage}
+                  setSelectedLanguage={setSelectedLanguage}
                 />
               ) : (
                 <ChatSidebar

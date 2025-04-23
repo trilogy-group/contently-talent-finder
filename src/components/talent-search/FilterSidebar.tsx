@@ -20,6 +20,8 @@ import {
 import { FilterOption, TalentData } from "@/types/talent-search";
 import { contentStrategyApi } from '@/utils/api';
 
+const TALENT_API_URL = 'https://9w2hge8i7d.execute-api.us-east-1.amazonaws.com/prod';
+
 interface FilterSidebarProps {
   searchMode: "filters" | "chat";
   searchTerm: string;
@@ -50,6 +52,10 @@ interface FilterSidebarProps {
   setContentExamples: (examples: string) => void;
   selectedPillar: string | null;
   setSelectedPillar: (pillar: string | null) => void;
+  selectedPublication: string | null;
+  setSelectedPublication: (publication: string | null) => void;
+  selectedLanguage: string | null;
+  setSelectedLanguage: (language: string | null) => void;
 }
 
 interface SearchResponse {
@@ -97,6 +103,10 @@ export const FilterSidebar = ({
   setContentExamples,
   selectedPillar,
   setSelectedPillar,
+  selectedPublication,
+  setSelectedPublication,
+  selectedLanguage,
+  setSelectedLanguage,
 }: FilterSidebarProps) => {
   // Add state for storing fetched options
   const [formatOptions, setFormatOptions] = useState<FilterOption[]>([]);
@@ -104,23 +114,21 @@ export const FilterSidebar = ({
   const [skillOptions, setSkillOptions] = useState<FilterOption[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [pillarOptions, setPillarOptions] = useState<FilterOption[]>([]);
+  const [publicationOptions, setPublicationOptions] = useState<FilterOption[]>([]);
+  const [languageOptions, setLanguageOptions] = useState<FilterOption[]>([]);
 
   // Fetch options when component mounts
   useEffect(() => {
     const fetchOptions = async () => {
       try {
-        const response = await fetch('https://a0wtldhbib.execute-api.us-east-1.amazonaws.com/prod/options');
+        const response = await fetch(`${TALENT_API_URL}/options`);
         const data = await response.json();
         
         setFormatOptions(data.storyFormats);
         setTopicOptions(data.topics);
         setSkillOptions(data.skills);
-
-        const pillars = await contentStrategyApi.getPillars();
-        setPillarOptions(pillars.map(pillar => ({
-          value: pillar.id.toString(),
-          label: pillar.name
-        })));
+        setPublicationOptions(data.brandProfiles);
+        setLanguageOptions(data.languages);
       } catch (error) {
         console.error('Error fetching options:', error);
       } finally {
@@ -130,6 +138,29 @@ export const FilterSidebar = ({
 
     fetchOptions();
   }, []);
+
+  // Separate useEffect for fetching pillars when publication changes
+  useEffect(() => {
+    const fetchPillars = async () => {
+      if (!selectedPublication) {
+        setPillarOptions([]);
+        return;
+      }
+
+      try {
+        const pillars = await contentStrategyApi.getPillars(selectedPublication);
+        setPillarOptions(pillars.map(pillar => ({
+          value: pillar.id.toString(),
+          label: pillar.name
+        })));
+      } catch (error) {
+        console.error('Error fetching pillars:', error);
+        setPillarOptions([]);
+      }
+    };
+
+    fetchPillars();
+  }, [selectedPublication]);
 
   // Rest of your existing state
   const [experienceValue, setExperienceValue] = useState<number>(minExperience || 0);
@@ -178,10 +209,12 @@ export const FilterSidebar = ({
         topicIds: selectedSpecialties.map(Number),
         skillIds: selectedSkills.map(Number),
         contentExamples: exampleUrls,
-        ...(selectedPillar && { pillarId: parseInt(selectedPillar) })
+        ...(selectedPillar && { pillarId: parseInt(selectedPillar) }),
+        ...(selectedPublication && { brandProfileId: selectedPublication }),
+        ...(selectedLanguage && { languageId: parseInt(selectedLanguage) })
       };
 
-      const response = await fetch('https://a0wtldhbib.execute-api.us-east-1.amazonaws.com/prod/talent/search', {
+      const response = await fetch(`${TALENT_API_URL}/talent/search`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -426,6 +459,42 @@ export const FilterSidebar = ({
           </div>
         ) : (
           <>
+            {/* Publication dropdown */}
+            <div>
+              <Label className="text-sm font-medium">Publication</Label>
+              <div className="mt-1">
+                <FilterSelect
+                  value={selectedPublication ? [selectedPublication] : []}
+                  placeholder={isLoading ? "Loading publications..." : "Select a publication"}
+                  options={publicationOptions}
+                  onChange={(values) => {
+                    const publication = values.length > 0 ? values[values.length - 1] : null;
+                    setSelectedPublication(publication);
+                    // Reset pillar when publication changes
+                    setSelectedPillar(null);
+                  }}
+                  maxItems={1}
+                />
+              </div>
+            </div>
+
+            {/* Add Language dropdown here */}
+            <div>
+              <Label className="text-sm font-medium">Language</Label>
+              <div className="mt-1">
+                <FilterSelect
+                  value={selectedLanguage ? [selectedLanguage] : []}
+                  placeholder={isLoading ? "Loading languages..." : "Select a language"}
+                  options={languageOptions}
+                  onChange={(values) => {
+                    const language = values.length > 0 ? values[values.length - 1] : null;
+                    setSelectedLanguage(language);
+                  }}
+                  maxItems={1}
+                />
+              </div>
+            </div>
+
             {/* Format dropdown */}
             <div>
               <Label className="text-sm font-medium">Format</Label>
@@ -450,7 +519,12 @@ export const FilterSidebar = ({
               <div className="mt-1">
                 <FilterSelect
                   value={selectedPillar ? [selectedPillar] : []}
-                  placeholder={isLoading ? "Loading pillars..." : "Select a pillar"}
+                  placeholder={!selectedPublication 
+                    ? "Select a publication first" 
+                    : isLoading 
+                      ? "Loading pillars..." 
+                      : "Select a pillar"
+                  }
                   options={pillarOptions}
                   onChange={(values) => {
                     const pillar = values.length > 0 ? values[values.length - 1] : null;

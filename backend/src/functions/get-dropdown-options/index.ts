@@ -55,6 +55,24 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
       label: row.name
     }));
 
+    // Query visible brand profiles
+    const brandProfilesQuery = await pool.query(
+      'SELECT id, name FROM brand_profiles WHERE active = true and deleted_at is null ORDER BY name'
+    );
+    const brandProfiles: DropdownOption[] = brandProfilesQuery.rows.map(row => ({
+      value: row.id,
+      label: row.name
+    }));
+
+    // Query languages
+    const languagesQuery = await pool.query(
+      'SELECT id, name FROM languages ORDER BY name'
+    );
+    const languages: DropdownOption[] = languagesQuery.rows.map(row => ({
+      value: row.id,
+      label: row.name.charAt(0).toUpperCase() + row.name.slice(1)
+    }));
+
     return {
       statusCode: 200,
       headers: {
@@ -64,7 +82,9 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
       body: JSON.stringify({
         skills,
         storyFormats,
-        topics
+        topics,
+        brandProfiles,
+        languages
       })
     };
   } catch (error) {

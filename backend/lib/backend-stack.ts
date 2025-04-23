@@ -6,18 +6,26 @@ import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as nodejs from 'aws-cdk-lib/aws-lambda-nodejs';
 import { Construct } from 'constructs';
 
+// Add environment prop to the stack
+export interface BackendStackProps extends cdk.StackProps {
+  environment: string;
+}
+
 export class BackendStack extends cdk.Stack {
-  constructor(scope: Construct, id: string, props?: cdk.StackProps) {
+  constructor(scope: Construct, id: string, props: BackendStackProps) {
     super(scope, id, props);
 
-    // Add VPC lookup
+    const { environment } = props;
+
+    // Add VPC lookup with environment-specific VPC ID
     const vpc = ec2.Vpc.fromLookup(this, 'ExistingVPC', {
-      isDefault: false, // Set to true if using default VPC
-      vpcId: process.env.VPC_ID || 'vpc-27f51d5e', // Make sure to set this environment variable
+      isDefault: false,
+      vpcId: process.env.VPC_ID || (environment === 'prod' ? 'vpc-39dde55f' : 'vpc-27f51d5e'),
     });
 
-    // Create role for Lambda functions to access RDS
+    // Add environment to role name
     const lambdaRole = new iam.Role(this, 'TalentServiceRole', {
+      roleName: `talent-service-role-${environment}`, // Add environment to role name
       assumedBy: new iam.ServicePrincipal('lambda.amazonaws.com'),
       managedPolicies: [
         iam.ManagedPolicy.fromAwsManagedPolicyName('service-role/AWSLambdaVPCAccessExecutionRole'),
@@ -81,6 +89,8 @@ export class BackendStack extends cdk.Stack {
         DB_NAME: process.env.DB_NAME || '',
         DB_USER: process.env.DB_USER || '',
         DB_PASSWORD: process.env.DB_PASSWORD || '',
+        CONTENTLY_API_ENDPOINT: process.env.CONTENTLY_API_ENDPOINT || 'https://snuffl.in',
+        CONTENTLY_API_KEY: process.env.CONTENTLY_API_KEY || 'vrmVRqar57W4rkKSZvgDKjazmBLEBUcM',
       },
       bundling: {
         minify: true,
@@ -111,7 +121,7 @@ export class BackendStack extends cdk.Stack {
 
     // API Gateway
     const api = new apigateway.RestApi(this, 'TalentApi', {
-      restApiName: 'Talent Service',
+      restApiName: `Talent Service - ${environment}`,
       defaultCorsPreflightOptions: {
         allowOrigins: apigateway.Cors.ALL_ORIGINS,
         allowMethods: apigateway.Cors.ALL_METHODS,
@@ -177,7 +187,7 @@ export class BackendStack extends cdk.Stack {
 
     // API Gateway
     const contentStrategyApi = new apigateway.RestApi(this, 'ContentStrategyApi', {
-      restApiName: 'Content Strategy Service',
+      restApiName: `Content Strategy Service - ${environment}`,
       defaultCorsPreflightOptions: {
         allowOrigins: apigateway.Cors.ALL_ORIGINS,
         allowMethods: apigateway.Cors.ALL_METHODS

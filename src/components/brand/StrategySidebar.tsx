@@ -9,6 +9,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
+import { Select } from '@/components/ui/select';
+import { contentStrategyApi } from "@/utils/api";
+import { FilterSelect } from "@/components/filters/FilterSelect";
 
 type StrategyTab = {
   id: string;
@@ -24,6 +27,8 @@ interface StrategySidebarProps {
   onToggleSidebar: () => void;
   selectedStrategy: string;
   onStrategyChange: (strategy: string) => void;
+  selectedPublication: string;
+  onPublicationChange: (publicationId: string) => void;
 }
 
 export const StrategySidebar = ({
@@ -34,10 +39,13 @@ export const StrategySidebar = ({
   onToggleSidebar,
   selectedStrategy,
   onStrategyChange,
+  selectedPublication,
+  onPublicationChange,
 }: StrategySidebarProps) => {
   const [strategies, setStrategies] = useState<string[]>([]);
   const [newStrategyName, setNewStrategyName] = useState<string>("");
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [publications, setPublications] = useState<Array<{ value: string, label: string }>>([]);
 
   // Load strategies from localStorage on component mount
   useEffect(() => {
@@ -69,6 +77,26 @@ export const StrategySidebar = ({
     }
   }, [strategies]);
 
+  useEffect(() => {
+    const fetchPublications = async () => {
+      try {
+        const data = await contentStrategyApi.getPublications();
+        setPublications(data.brandProfiles || []);
+        
+        // Only set default if no publication is selected and we haven't set one before
+        if (!selectedPublication && data.brandProfiles?.length && !localStorage.getItem('selectedPublication')) {
+          const defaultPub = data.brandProfiles.find((p: any) => p.value === '1230') || data.brandProfiles[0];
+          onPublicationChange(defaultPub.value);
+          localStorage.setItem('selectedPublication', defaultPub.value);
+        }
+      } catch (error) {
+        console.error('Error fetching publications:', error);
+      }
+    };
+
+    fetchPublications();
+  }, []);
+
   const handleAddStrategy = () => {
     if (newStrategyName.trim()) {
       const updatedStrategies = [...strategies, newStrategyName.trim()];
@@ -96,85 +124,31 @@ export const StrategySidebar = ({
   };
 
   return (
-    <div
-      className={`bg-white border-r border-gray-200 transition-all duration-300 relative ${
-        sidebarOpen ? "w-1/5" : "w-16"
-      }`}
-    >
-      {dropdownOpen && (
-        <div className="absolute inset-0 bg-black/20 z-10 pointer-events-none">
-          {/* This is the overlay that grays out the sidebar */}
-        </div>
-      )}
-      <div className="flex justify-between items-center p-2 border-b border-gray-200 relative z-20 bg-orange-100">
-        {sidebarOpen && (
-          <DropdownMenu onOpenChange={setDropdownOpen}>
-            <DropdownMenuTrigger asChild>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className={`flex items-center gap-1 text-sm hover:bg-orange-200 ${dropdownOpen ? 'bg-orange-200' : ''}`}
-              >
-                {selectedStrategy === "all" ? "All Strategies" : selectedStrategy}
-                <ChevronDown className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-56 z-50">
-              <DropdownMenuItem 
-                onClick={() => onStrategyChange("all")}
-                className={`${selectedStrategy === "all" ? "bg-slate-100" : ""} flex justify-between items-center`}
-              >
-                <span>All Strategies</span>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              {strategies.map((strategy) => (
-                <DropdownMenuItem 
-                  key={strategy} 
-                  onClick={() => onStrategyChange(strategy)}
-                  className={`${selectedStrategy === strategy ? "bg-slate-100" : ""} flex justify-between items-center`}
-                >
-                  <span>{strategy}</span>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-6 w-6 p-0 hover:bg-red-100 hover:text-red-600"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDeleteStrategy(strategy, e);
-                    }}
-                  >
-                    <X className="h-3 w-3" />
-                  </Button>
-                </DropdownMenuItem>
-              ))}
-              <DropdownMenuSeparator />
-              <div className="p-2">
-                <Input
-                  placeholder="Add new strategy..."
-                  value={newStrategyName}
-                  onChange={(e) => setNewStrategyName(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      handleAddStrategy();
-                    }
-                  }}
-                  className="text-sm"
-                />
-              </div>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        )}
+    <div className={`bg-white border-r border-gray-200 transition-all duration-300 relative ${
+      sidebarOpen ? "w-1/5" : "w-16"
+    }`}>
+      <div className="p-4 border-b border-gray-200 bg-white">
+        <FilterSelect
+          value={selectedPublication ? [selectedPublication] : []}
+          onChange={(value) => onPublicationChange(value[0])}
+          options={publications}
+          placeholder="Select Publication"
+          maxItems={1}
+        />
+      </div>
+
+      <div className="absolute right-0 top-4 transform translate-x-1/2">
         <Button
-          variant="ghost"
-          size="sm"
+          variant="outline"
+          size="icon"
           onClick={onToggleSidebar}
-          aria-label={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
-          className="relative z-20"
+          className="relative bg-white"
         >
           {sidebarOpen ? <PanelLeftClose className="h-4 w-4" /> : <PanelLeftOpen className="h-4 w-4" />}
         </Button>
       </div>
-      <div className="py-4 relative z-0">
+
+      <div className="py-4">
         {tabs.map((tab) => (
           <button
             key={tab.id}
