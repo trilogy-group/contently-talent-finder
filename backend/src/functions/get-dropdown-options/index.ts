@@ -63,6 +63,16 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
       value: row.id,
       label: row.name
     }));
+
+    // Query languages
+    const languagesQuery = await pool.query(
+      'SELECT id, name FROM languages ORDER BY name'
+    );
+    const languages: DropdownOption[] = languagesQuery.rows.map(row => ({
+      value: row.id,
+      label: row.name.charAt(0).toUpperCase() + row.name.slice(1)
+    }));
+
     return {
       statusCode: 200,
       headers: {
@@ -73,7 +83,8 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
         skills,
         storyFormats,
         topics,
-        brandProfiles
+        brandProfiles,
+        languages
       })
     };
   } catch (error) {
