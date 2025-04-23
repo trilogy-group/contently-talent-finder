@@ -28,9 +28,10 @@ interface AudiencesTabContentProps {
   audiences: Audience[];
   setAudiences: React.Dispatch<React.SetStateAction<Audience[]>>;
   isLoading?: boolean;
+  selectedPublication: string;
 }
 
-export const AudiencesTabContentV2: React.FC<AudiencesTabContentProps> = ({ audiences, setAudiences, isLoading = false }) => {
+export const AudiencesTabContentV2: React.FC<AudiencesTabContentProps> = ({ audiences, setAudiences, isLoading = false, selectedPublication }) => {
   const [isAddingAudience, setIsAddingAudience] = useState(false);
   const [isEditingAudience, setIsEditingAudience] = useState(false);
   const [currentAudience, setCurrentAudience] = useState<Audience | null>(null);
@@ -199,6 +200,21 @@ export const AudiencesTabContentV2: React.FC<AudiencesTabContentProps> = ({ audi
     } catch (error) {
       console.error('Error updating audience:', error);
       showToastAlert('Error updating audience. Please try again.', 'error');
+    }
+  };
+
+  const handleSave = async () => {
+    if (!selectedPublication) {
+      showToastAlert('Please select a publication first.', 'warning');
+      return;
+    }
+
+    try {
+      await contentStrategyApi.updateAudiences(audiences, selectedPublication);
+      showToastAlert('Audiences updated successfully!', 'success');
+    } catch (error) {
+      console.error('Error updating audiences:', error);
+      showToastAlert('Error updating audiences. Please try again.', 'error');
     }
   };
 

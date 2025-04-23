@@ -23,6 +23,7 @@ interface VoiceTabContentProps {
   setNotes: (value: string) => void;
   isEditing?: boolean;
   isLoading?: boolean;
+  selectedPublication: string;
 }
 
 export const VoiceTabContent: React.FC<VoiceTabContentProps> = ({
@@ -37,7 +38,8 @@ export const VoiceTabContent: React.FC<VoiceTabContentProps> = ({
   notes,
   setNotes,
   isEditing = false,
-  isLoading = false
+  isLoading = false,
+  selectedPublication
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -56,10 +58,11 @@ export const VoiceTabContent: React.FC<VoiceTabContentProps> = ({
         styleGuide,
         useFirstPerson,
         notes
-      });
+      }, selectedPublication);
+      showToastAlert('Voice and style updated successfully!', 'success');
     } catch (error) {
-      console.error('Error saving voice and style:', error);
-      showToastAlert('Error saving changes. Please try again.', 'error');
+      console.error('Error updating voice and style:', error);
+      showToastAlert('Error updating voice and style. Please try again.', 'error');
     }
   };
 

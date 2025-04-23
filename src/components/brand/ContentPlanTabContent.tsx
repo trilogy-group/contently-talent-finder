@@ -21,12 +21,14 @@ interface ContentPlanTabContentProps {
   contentPlan: ContentPlan | null;
   setContentPlan: (plan: ContentPlan | null) => void;
   isLoading?: boolean;
+  selectedPublication: string;
 }
 
 export const ContentPlanTabContent: React.FC<ContentPlanTabContentProps> = ({
   contentPlan,
   setContentPlan,
-  isLoading = false
+  isLoading = false,
+  selectedPublication
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editingFormats, setEditingFormats] = useState<ContentFormat[]>([]);
@@ -136,7 +138,7 @@ export const ContentPlanTabContent: React.FC<ContentPlanTabContentProps> = ({
   };
 
   // Save the plan
-  const savePlan = async () => {
+  const handleSave = async () => {
     if (!planName.trim()) {
       showToastAlert("Please enter a plan name", "error");
       return;
@@ -163,7 +165,7 @@ export const ContentPlanTabContent: React.FC<ContentPlanTabContentProps> = ({
         }
       };
 
-      await contentStrategyApi.updatePlan(updatedPlan);
+      await contentStrategyApi.updatePlan(updatedPlan, selectedPublication);
       setContentPlan({
         id: updatedPlan.pillar.id,
         name: updatedPlan.pillar.name,
@@ -176,8 +178,8 @@ export const ContentPlanTabContent: React.FC<ContentPlanTabContentProps> = ({
       setIsEditing(false);
       showToastAlert('Content plan updated successfully!', 'success');
     } catch (error) {
-      console.error('Error saving content plan:', error);
-      showToastAlert('Error saving content plan. Please try again.', 'error');
+      console.error('Error updating content plan:', error);
+      showToastAlert('Error updating content plan. Please try again.', 'error');
     }
   };
 
@@ -393,7 +395,7 @@ export const ContentPlanTabContent: React.FC<ContentPlanTabContentProps> = ({
                       <Button variant="outline" onClick={cancelEditing}>
                         Cancel
                       </Button>
-                      <Button onClick={savePlan}>
+                      <Button onClick={handleSave}>
                         Save
                       </Button>
                     </div>

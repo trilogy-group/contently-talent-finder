@@ -23,13 +23,15 @@ interface PillarsTabContentProps {
   setPillars: (pillars: ContentPillar[]) => void;
   seoKeywords: SeoKeyword[];
   isLoading?: boolean;
+  selectedPublication: string;
 }
 
 export const PillarsTabContent: React.FC<PillarsTabContentProps> = ({
   pillars,
   setPillars,
   seoKeywords,
-  isLoading = false
+  isLoading = false,
+  selectedPublication
 }) => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingPillarId, setEditingPillarId] = useState<string | null>(null);
@@ -129,6 +131,16 @@ export const PillarsTabContent: React.FC<PillarsTabContentProps> = ({
       });
     } catch (error) {
       console.error("Error toggling keyword:", error);
+    }
+  };
+
+  const handleSave = async () => {
+    try {
+      await contentStrategyApi.updatePillars(pillars, selectedPublication);
+      showToastAlert('Content pillars updated successfully!', 'success');
+    } catch (error) {
+      console.error('Error updating content pillars:', error);
+      showToastAlert('Error updating content pillars. Please try again.', 'error');
     }
   };
 

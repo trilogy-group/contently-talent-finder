@@ -19,12 +19,14 @@ interface SeoKeywordsTabContentProps {
   keywords: SeoKeyword[];
   setKeywords: (keywords: SeoKeyword[]) => void;
   isLoading?: boolean;
+  selectedPublication: string;
 }
 
 export const SeoKeywordsTabContent: React.FC<SeoKeywordsTabContentProps> = ({
   keywords,
   setKeywords,
-  isLoading = false
+  isLoading = false,
+  selectedPublication
 }) => {
   const [isAddingKeyword, setIsAddingKeyword] = useState(false);
   const [sortConfig, setSortConfig] = useState<SortConfig>({
@@ -288,13 +290,10 @@ export const SeoKeywordsTabContent: React.FC<SeoKeywordsTabContentProps> = ({
     keyword.keyword.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleAddKeyword = async () => {
-    if (!newKeyword.keyword) return;
-
+  const handleAddKeyword = async (keyword: Omit<SeoKeyword, 'id'>) => {
     try {
-      const response = await contentStrategyApi.createSeoKeyword(newKeyword);
-      setKeywords([...keywords, response]);
-      resetForm();
+      const newKeyword = await contentStrategyApi.createSeoKeyword(keyword, selectedPublication);
+      setKeywords([...keywords, newKeyword]);
       showToastAlert('Keyword added successfully!', 'success');
     } catch (error) {
       console.error('Error adding keyword:', error);
@@ -304,7 +303,7 @@ export const SeoKeywordsTabContent: React.FC<SeoKeywordsTabContentProps> = ({
 
   const handleDeleteKeyword = async (id: string) => {
     try {
-      await contentStrategyApi.deleteSeoKeyword(id);
+      await contentStrategyApi.deleteSeoKeyword(id, selectedPublication);
       setKeywords(keywords.filter(k => k.id !== id));
       showToastAlert('Keyword deleted successfully!', 'success');
     } catch (error) {

@@ -67,13 +67,19 @@ const BrandCompass = () => {
   const [selectedStrategy, setSelectedStrategy] = useState<string>("all");
   const [contentPlan, setContentPlan] = useState<ContentPlan | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isInitialized, setIsInitialized] = useState(false);
+  const [dataFetchAttempted, setDataFetchAttempted] = useState(false);
+  const [selectedPublication, setSelectedPublication] = useState<string>("");
 
   // Load selected strategy from localStorage
   useEffect(() => {
     const loadInitialData = async () => {
+      if (!selectedPublication || dataFetchAttempted) return;
+      
       setIsLoading(true);
+      setDataFetchAttempted(true);
+      
       try {
-        // Load data from all endpoints in parallel
         const [
           missionAndGoals,
           audiences,
@@ -83,13 +89,13 @@ const BrandCompass = () => {
           distribution,
           seoKeywords
         ] = await Promise.all([
-          contentStrategyApi.getMissionAndGoals(),
-          contentStrategyApi.getAudiences(),
-          contentStrategyApi.getVoiceAndStyle(),
-          contentStrategyApi.getPillars(),
-          contentStrategyApi.getPlan(),
-          contentStrategyApi.getDistribution(),
-          contentStrategyApi.getSeoKeywords()
+          contentStrategyApi.getMissionAndGoals(selectedPublication),
+          contentStrategyApi.getAudiences(selectedPublication),
+          contentStrategyApi.getVoiceAndStyle(selectedPublication),
+          contentStrategyApi.getPillars(selectedPublication),
+          contentStrategyApi.getPlan(selectedPublication),
+          contentStrategyApi.getDistribution(selectedPublication),
+          contentStrategyApi.getSeoKeywords(selectedPublication)
         ]);
 
         // Update state with fetched data
@@ -115,9 +121,9 @@ const BrandCompass = () => {
         setDistributionChannels(distribution.channels || []);
         setSeoKeywords(seoKeywords || []);
         setContentPlan(contentPlan.length > 0 ? contentPlan[0] : null);
-
+        setIsInitialized(true);
       } catch (error) {
-        console.error('Error loading initial data:', error);
+        console.error('Error loading data:', error);
         showToastAlert('Error loading data. Please try again.', 'error');
       } finally {
         setIsLoading(false);
@@ -125,7 +131,15 @@ const BrandCompass = () => {
     };
 
     loadInitialData();
-  }, []);
+  }, [selectedPublication]);
+
+  // Reset data fetch attempt when publication changes
+  useEffect(() => {
+    if (selectedPublication) {
+      setDataFetchAttempted(false);
+      setIsInitialized(false);
+    }
+  }, [selectedPublication]);
 
   // State for tracking if distribution is in edit mode
   const [isDistributionEditing, setIsDistributionEditing] = useState(false);
@@ -137,55 +151,44 @@ const BrandCompass = () => {
 
   // Function to save data to database
   const saveToDatabase = async () => {
+    if (!selectedPublication) {
+      showToastAlert('Please select a publication first.', 'warning');
+      return;
+    }
+
     try {
-      // Get the original keywords from the API to compare
-      const originalKeywords = await contentStrategyApi.getSeoKeywords();
+      // Get current keywords for comparison
+      const originalKeywords = await contentStrategyApi.getSeoKeywords(selectedPublication);
       
-      // Find keywords to delete (exist in original but not in current state)
-      const keywordsToDelete = originalKeywords.filter(
-        origKeyword => !seoKeywords.some(
-          currKeyword => currKeyword.id === origKeyword.id
-        )
-      );
-
-      // Find keywords to create (exist in current state but not in original)
-      const keywordsToCreate = seoKeywords.filter(
-        currKeyword => !originalKeywords.some(
-          origKeyword => origKeyword.id === currKeyword.id
-        )
-      );
-
-      // Save data to all endpoints in parallel
+      // Update all API calls to include selectedPublication
       await Promise.all([
         contentStrategyApi.updateMissionAndGoals({
-          content_strategy: {
-            mission: contentMission,
-            goal: primaryGoal.replace(/_/g, ' '),
-            organization_type: orgType.toUpperCase(),
-            kpis: selectedKpis.map(kpi => 
-              kpi.replace(/_/g, ' ')
-                 .split(' ')
-                 .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-                 .join(' ')
-            )
-          }
-        }),
+          goal: primaryGoal,
+          organization_type: orgType,
+          mission: contentMission,
+          kpis: selectedKpis
+        }, selectedPublication),
+        
         contentStrategyApi.updateVoiceAndStyle({
           voiceDescription,
           blockedWords,
           styleGuide,
           useFirstPerson,
           notes
-        }),
-        ...pillars.map(pillar => contentStrategyApi.updatePillar(pillar.id, pillar)),
-        contentStrategyApi.updatePlan(contentPlan),
-        contentStrategyApi.updateDistribution({ channels: distributionChannels }),
-        // Handle SEO keywords separately
-        ...keywordsToDelete.map(keyword => 
-          contentStrategyApi.deleteSeoKeyword(keyword.id)
+        }, selectedPublication),
+        
+        contentStrategyApi.updatePillars(pillars, selectedPublication),
+        contentStrategyApi.updatePlans(contentPlans, selectedPublication),
+        contentStrategyApi.updateDistribution({
+          channels: distributionChannels
+        }, selectedPublication),
+        
+        // Handle SEO keywords updates
+        ...keywordsToDelete.map(id => 
+          contentStrategyApi.deleteSeoKeyword(id, selectedPublication)
         ),
         ...keywordsToCreate.map(keyword => 
-          contentStrategyApi.createSeoKeyword(keyword)
+          contentStrategyApi.createSeoKeyword(keyword, selectedPublication)
         )
       ]);
 
@@ -389,6 +392,7 @@ const BrandCompass = () => {
             kpiOptions={kpiOptions}
             isEditing={isEditing}
             isLoading={isLoading}
+            selectedPublication={selectedPublication}
           />
         );
       case "audiences":
@@ -396,7 +400,9 @@ const BrandCompass = () => {
           <AudiencesTabContentV2
             audiences={audiences}
             setAudiences={setAudiences}
+            isEditing={isEditing}
             isLoading={isLoading}
+            selectedPublication={selectedPublication}
           />
         );
       case "voice":
@@ -414,6 +420,7 @@ const BrandCompass = () => {
             setNotes={setNotes}
             isEditing={isEditing}
             isLoading={isLoading}
+            selectedPublication={selectedPublication}
           />
         );
       case "pillars":
@@ -421,8 +428,9 @@ const BrandCompass = () => {
           <PillarsTabContent
             pillars={pillars}
             setPillars={setPillars}
-            seoKeywords={seoKeywords}
+            isEditing={isEditing}
             isLoading={isLoading}
+            selectedPublication={selectedPublication}
           />
         );
       case "plan":
@@ -430,7 +438,9 @@ const BrandCompass = () => {
           <ContentPlanTabContent
             contentPlan={contentPlan}
             setContentPlan={setContentPlan}
+            isEditing={isEditing}
             isLoading={isLoading}
+            selectedPublication={selectedPublication}
           />
         );
       case "distribution":
@@ -439,7 +449,9 @@ const BrandCompass = () => {
             channels={distributionChannels}
             setChannels={setDistributionChannels}
             isEditing={isDistributionEditing}
+            onEditToggle={handleDistributionEditToggle}
             isLoading={isLoading}
+            selectedPublication={selectedPublication}
           />
         );
       case "seo":
@@ -447,11 +459,13 @@ const BrandCompass = () => {
           <SeoKeywordsTabContent
             keywords={seoKeywords}
             setKeywords={setSeoKeywords}
+            isEditing={isEditing}
             isLoading={isLoading}
+            selectedPublication={selectedPublication}
           />
         );
       default:
-        return <DefaultTabContent title={currentTab.title} />;
+        return <DefaultTabContent />;
     }
   };
 
@@ -511,6 +525,8 @@ const BrandCompass = () => {
           onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
           selectedStrategy={selectedStrategy}
           onStrategyChange={handleStrategyChange}
+          selectedPublication={selectedPublication}
+          onPublicationChange={setSelectedPublication}
         />
 
         <div className="flex-1 p-6 overflow-auto w-4/5">

@@ -33,6 +33,7 @@ interface GoalsTabContentProps {
   kpiOptions: { value: string; label: string }[];
   isEditing: boolean;
   isLoading?: boolean;
+  selectedPublication: string;
 }
 
 export const GoalsTabContent: React.FC<GoalsTabContentProps> = ({
@@ -48,7 +49,8 @@ export const GoalsTabContent: React.FC<GoalsTabContentProps> = ({
   toggleKpi,
   kpiOptions,
   isEditing,
-  isLoading = false
+  isLoading = false,
+  selectedPublication
 }) => {
   const primaryGoalOptions = [
     {
@@ -104,7 +106,7 @@ export const GoalsTabContent: React.FC<GoalsTabContentProps> = ({
                .join(' ')
           )
         }
-      });
+      }, selectedPublication);
       showToastAlert('Goals and mission updated successfully!', 'success');
     } catch (error) {
       console.error('Error updating goals and mission:', error);
