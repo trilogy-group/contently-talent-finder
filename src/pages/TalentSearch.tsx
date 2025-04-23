@@ -67,6 +67,9 @@ const TalentSearch = () => {
   // Add state for selected publication
   const [selectedPublication, setSelectedPublication] = useState<string | null>(null);
 
+  // Add state for selected language
+  const [selectedLanguage, setSelectedLanguage] = useState<string | null>(null);
+
   // Wrapper functions for state updates
   const updateSelectedIndustries = (industries: string[]) => {
     // Check if industry already exists
@@ -217,6 +220,9 @@ const TalentSearch = () => {
     if (isRecording) {
       stopRecording();
     }
+
+    // Reset language
+    setSelectedLanguage(null);
   };
 
   // Filter profiles based on current filters
@@ -335,6 +341,8 @@ const TalentSearch = () => {
                   setSelectedPillar={setSelectedPillar}
                   selectedPublication={selectedPublication}
                   setSelectedPublication={setSelectedPublication}
+                  selectedLanguage={selectedLanguage}
+                  setSelectedLanguage={setSelectedLanguage}
                 />
               ) : (
                 <ChatSidebar

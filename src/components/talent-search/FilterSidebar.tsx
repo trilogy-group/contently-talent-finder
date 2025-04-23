@@ -54,6 +54,8 @@ interface FilterSidebarProps {
   setSelectedPillar: (pillar: string | null) => void;
   selectedPublication: string | null;
   setSelectedPublication: (publication: string | null) => void;
+  selectedLanguage: string | null;
+  setSelectedLanguage: (language: string | null) => void;
 }
 
 interface SearchResponse {
@@ -103,6 +105,8 @@ export const FilterSidebar = ({
   setSelectedPillar,
   selectedPublication,
   setSelectedPublication,
+  selectedLanguage,
+  setSelectedLanguage,
 }: FilterSidebarProps) => {
   // Add state for storing fetched options
   const [formatOptions, setFormatOptions] = useState<FilterOption[]>([]);
@@ -111,6 +115,7 @@ export const FilterSidebar = ({
   const [isLoading, setIsLoading] = useState(true);
   const [pillarOptions, setPillarOptions] = useState<FilterOption[]>([]);
   const [publicationOptions, setPublicationOptions] = useState<FilterOption[]>([]);
+  const [languageOptions, setLanguageOptions] = useState<FilterOption[]>([]);
 
   // Fetch options when component mounts
   useEffect(() => {
@@ -123,6 +128,7 @@ export const FilterSidebar = ({
         setTopicOptions(data.topics);
         setSkillOptions(data.skills);
         setPublicationOptions(data.brandProfiles);
+        setLanguageOptions(data.languages);
       } catch (error) {
         console.error('Error fetching options:', error);
       } finally {
@@ -204,7 +210,8 @@ export const FilterSidebar = ({
         skillIds: selectedSkills.map(Number),
         contentExamples: exampleUrls,
         ...(selectedPillar && { pillarId: parseInt(selectedPillar) }),
-        ...(selectedPublication && { brandProfileId: selectedPublication })
+        ...(selectedPublication && { brandProfileId: selectedPublication }),
+        ...(selectedLanguage && { languageId: parseInt(selectedLanguage) })
       };
 
       const response = await fetch(`${TALENT_API_URL}/talent/search`, {
@@ -465,6 +472,23 @@ export const FilterSidebar = ({
                     setSelectedPublication(publication);
                     // Reset pillar when publication changes
                     setSelectedPillar(null);
+                  }}
+                  maxItems={1}
+                />
+              </div>
+            </div>
+
+            {/* Add Language dropdown here */}
+            <div>
+              <Label className="text-sm font-medium">Language</Label>
+              <div className="mt-1">
+                <FilterSelect
+                  value={selectedLanguage ? [selectedLanguage] : []}
+                  placeholder={isLoading ? "Loading languages..." : "Select a language"}
+                  options={languageOptions}
+                  onChange={(values) => {
+                    const language = values.length > 0 ? values[values.length - 1] : null;
+                    setSelectedLanguage(language);
                   }}
                   maxItems={1}
                 />
