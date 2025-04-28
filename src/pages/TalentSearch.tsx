@@ -130,11 +130,15 @@ const TalentSearch = () => {
     setContentExamples: (urls: string[]) => {
       setContentExamples(urls.join(', '));
     },
+    setSelectedLanguage,
+    setSelectedPublication,
     
     // Current filter states for feedback
     selectedRoles: selectedSkills,
     selectedIndustries,
-    selectedSpecialties
+    selectedSpecialties,
+    selectedLanguage,
+    selectedPublication
   });
 
   // Initialize speech recognition
